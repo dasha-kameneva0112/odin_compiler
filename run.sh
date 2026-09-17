@@ -5,7 +5,7 @@ GCC_BIN="/c/msys64/ucrt64/bin/gcc.exe"
 
 "$FLEX_BIN" -o lex.yy.c lexer.l
 
-"$GCC_BIN" lex.yy.c -o lexer.exe
+"$GCC_BIN" -I./tools lex.yy.c -o lexer.exe
 
 ./lexer.exe test.odin > result.txt
 
