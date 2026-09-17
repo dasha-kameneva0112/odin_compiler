@@ -5,12 +5,29 @@
 #include <stdio.h>
 %}
 
+DIGIT   [0-9]
+BIN_DIGIT   [01]
+OCT_DIGIT   [0-7]
+DOZ_DIGIT	[0-9abAB]
+HEX_DIGIT	[0-9a-fA-F]
+	
+LETTER      [a-zA-Z]
+ID_START    ({LETTER}|_)
+ID_CHAR     ({LETTER}|{DIGIT}|_)
+
 %%
 
-[0-9]+          { printf("NUMBER: %s\n", yytext); }
-[A-Za-z_][A-Za-z0-9_]*  { printf("IDENTIFIER: %s\n", yytext); }
+"package"   { printf("KEYWORD: package\n");}
+
+{ID_START}{ID_CHAR}*  { printf("IDENTIFIER: %s\n", yytext); }
+
+0|[1-9](_?{DIGIT})*   { printf("DECIMAL_LIT: %s\n", yytext); }
+0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { printf("BINARY_LIT: %s\n", yytext); }
+0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { printf("OCTAL_LIT: %s\n", yytext); }
+
+
 [ \t\n]+        { /* пропускаем пробелы */ }
-.               { printf("SYMBOL: %s\n", yytext); }
+. { printf("SYMBOL: %s\n", yytext); }
 
 %%
 
