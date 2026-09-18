@@ -1,8 +1,12 @@
 %option noyywrap
 %option never-interactive
 
+%x COMMENT
+%x STRING
+
 %{
 #include <stdio.h>
+int comment_depth = 0;
 %}
 
 DIGIT   [0-9]
@@ -16,12 +20,24 @@ ID_START    ({LETTER}|_)
 ID_CHAR     ({LETTER}|{DIGIT}|_)
 
 %%
+"//"[^\n]*
 
+"/*"                             { comment_depth = 1; BEGIN(COMMENT); }
+<COMMENT>"/*"                    { comment_depth++; }
+<COMMENT>\n                      {  }
+<COMMENT>.                       {  }
+<COMMENT><<EOF>>                 { printf("ERROR: unclosed quoted\n"); return 1; }
+<COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) BEGIN(INITIAL); }
+
+"true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
 "package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
 
-{ID_START}{ID_CHAR}*  { printf("IDENTIFIER: %s\n", yytext); }
+"nil"                            { printf("NIL_LIT: %s\n",yytext); }
+"---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
+"{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
+"?"                              { printf("AUTO_LEN: %s\n", yytext); }
 
-0|[1-9](_?{DIGIT})*   { printf("DECIMAL_LIT: %s\n", yytext); }
+0|[1-9](_?{DIGIT})*              { printf("DECIMAL_LIT: %s\n", yytext); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { printf("BINARY_LIT: %s\n", yytext); }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { printf("OCTAL_LIT: %s\n", yytext); }
 0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { printf("DOZENAL_LIT: %s\n", yytext); }
@@ -32,9 +48,9 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 
 
 
-
-[ \t\n]+        { /* пропускаем пробелы */ }
-. { printf("SYMBOL: %s\n", yytext); }
+{ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
+[ \t\n]+                         { /* пропускаем пробелы */ }
+.                                { printf("SYMBOL: %s\n", yytext); }
 
 %%
 
