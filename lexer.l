@@ -3,6 +3,8 @@
 
 %x COMMENT
 %x STRING
+%x CHAR
+%x RAW_STRING
 
 %{
 #include <stdio.h>
@@ -28,6 +30,11 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 <COMMENT>.                       {  }
 <COMMENT><<EOF>>                 { printf("ERROR: unclosed quoted\n"); return 1; }
 <COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) BEGIN(INITIAL); }
+
+\"      { BEGIN(STRING); }
+<STRING> \"     { BEGIN(INITIAL); }
+<STRING>\n      { printf("ERROR: unclosed string\n"); BEGIN(INITIAL); return 1; }
+<STRING><<EOF>> { printf("ERROR: unclosed string\n"); return 1; }
 
 "true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
 "package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
@@ -110,9 +117,9 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
 
 [ \t\r\n]+                       { /* пропускаем пробелы */ }
+"bool"|"b8"|"b16"|"b32"|"b64"|"int"|"i8"|"i16"|"i32"|"i64"|"i128"|"uint"|"u8"|"u16"|"u32"|"u64"|"u128"|"uintptr"|"f16"|"f32"|"f64"|"complex32"|"complex64"|"complex128"|"quaternion64"|"quaternion128"|"quaternion256"|"string"|"cstring"|"byte"|"rune"|"rawptr"|"any"      { printf("BUILTIN_TYPE: %s\n", yytext); }
 
-
-.                                { printf("SYMBOL: %s\n", yytext); }
+.       { printf("SYMBOL: %s\n", yytext); }
 
 %%
 
