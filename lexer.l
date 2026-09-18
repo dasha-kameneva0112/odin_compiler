@@ -20,7 +20,7 @@ ID_START    ({LETTER}|_)
 ID_CHAR     ({LETTER}|{DIGIT}|_)
 
 %%
-"//"[^\n]*
+"//"[^\n]*                       { printf("ONE_LINE_COMMENT: %s\n",yytext); }
 
 "/*"                             { comment_depth = 1; BEGIN(COMMENT); }
 <COMMENT>"/*"                    { comment_depth++; }
@@ -98,8 +98,20 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 "->"    { printf("OP_ARROW: %s\n", yytext); }
 ":"     { printf("COLON: %s\n", yytext); }
 
+"("     { printf("LPAREN: %s\n", yytext); }
+")"     { printf("RPAREN: %s\n", yytext); }
+"{"     { printf("LBRACE: %s\n", yytext); }
+"}"     { printf("RBRACE: %s\n", yytext); }
+"["     { printf("LBRACKET: %s\n", yytext); }
+"]"     { printf("RBRACKET: %s\n", yytext); }
+","     { printf("COMMA: %s\n", yytext); }
+";"     { printf("SEMICOLON: %s\n", yytext); }
+
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
-[ \t\n]+                         { /* пропускаем пробелы */ }
+
+[ \t\r\n]+                       { /* пропускаем пробелы */ }
+
+
 .                                { printf("SYMBOL: %s\n", yytext); }
 
 %%
