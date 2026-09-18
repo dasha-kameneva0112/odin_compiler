@@ -24,6 +24,13 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 0|[1-9](_?{DIGIT})*   { printf("DECIMAL_LIT: %s\n", yytext); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { printf("BINARY_LIT: %s\n", yytext); }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { printf("OCTAL_LIT: %s\n", yytext); }
+0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { printf("DOZENAL_LIT: %s\n", yytext); }
+0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { printf("HEX_LIT: %s\n", yytext); }
+0d{DIGIT}(_?{DIGIT})*            { printf("EX_DECIMAL_LIT: %s\n", yytext); }
+
+({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.      { printf("FLOAT_LIT: %s\n", yytext); }
+
+
 
 
 [ \t\n]+        { /* пропускаем пробелы */ }
