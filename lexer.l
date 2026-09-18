@@ -8,16 +8,16 @@
 DIGIT   [0-9]
 BIN_DIGIT   [01]
 OCT_DIGIT   [0-7]
-DOZ_DIGIT	[0-9abAB]
-HEX_DIGIT	[0-9a-fA-F]
-	
+DOZ_DIGIT  [0-9abAB]
+HEX_DIGIT  [0-9a-fA-F]
+  
 LETTER      [a-zA-Z]
 ID_START    ({LETTER}|_)
 ID_CHAR     ({LETTER}|{DIGIT}|_)
 
 %%
 
-"package"   { printf("KEYWORD: package\n");}
+"package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
 
 {ID_START}{ID_CHAR}*  { printf("IDENTIFIER: %s\n", yytext); }
 
