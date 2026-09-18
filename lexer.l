@@ -46,7 +46,57 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 
 ({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.      { printf("FLOAT_LIT: %s\n", yytext); }
 
+"+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
+"-="    { printf("OP_SUB_ASSIGN: %s\n", yytext); }
+"*="    { printf("OP_MUL_ASSIGN: %s\n", yytext); }
+"/="    { printf("OP_DIV_ASSIGN: %s\n", yytext); }
+"%="    { printf("OP_MOD_ASSIGN: %s\n", yytext); }
+"%%="   { printf("OP_MOD2_ASSIGN: %s\n", yytext); }
+"|="    { printf("OP_OR_ASSIGN: %s\n", yytext); }
+"~="    { printf("OP_NOT_ASSIGN: %s\n", yytext); }
+"&="    { printf("OP_AND_ASSIGN: %s\n", yytext); }
+"&~="   { printf("OP_AND_NOT_ASSIGN: %s\n", yytext); }
+"<<="   { printf("OP_SHL_ASSIGN: %s\n", yytext); }
+">>="   { printf("OP_SHR_ASSIGN: %s\n", yytext); }
+"&&="   { printf("OP_LOG_AND_ASSIGN: %s\n", yytext); }
+"||="   { printf("OP_LOG_OR_ASSIGN: %s\n", yytext); }
 
+"="     { printf("OP_ASSIGN: %s\n", yytext); }
+"$"     { printf("OP_DOLLAR: %s\n", yytext); }
+
+"&&"    { printf("OP_LOG_AND: %s\n", yytext); }
+"||"    { printf("OP_LOG_OR: %s\n", yytext); }
+"!"     { printf("OP_NOT: %s\n", yytext); }
+
+"|"     { printf("OP_BIT_OR: %s\n", yytext); }
+"&~"    { printf("OP_AND_NOT: %s\n", yytext); }
+"~"     { printf("OP_BIT_NOT: %s\n", yytext); }
+"^"     { printf("OP_DEREF: %s\n", yytext); }
+"&"     { printf("OP_ADDRESS: %s\n", yytext); }
+"<<"    { printf("OP_SHL: %s\n", yytext); }
+">>"    { printf("OP_SHR: %s\n", yytext); }
+
+"=="    { printf("OP_EQ: %s\n", yytext); }
+"!="    { printf("OP_NE: %s\n", yytext); }
+"<="    { printf("OP_LE: %s\n", yytext); }
+">="    { printf("OP_GE: %s\n", yytext); }
+"<"     { printf("OP_LT: %s\n", yytext); }
+">"     { printf("OP_GT: %s\n", yytext); }
+
+"+"     { printf("OP_PLUS: %s\n", yytext); }
+"-"     { printf("OP_MINUS: %s\n", yytext); }
+"*"     { printf("OP_MUL: %s\n", yytext); }
+"/"     { printf("OP_DIV: %s\n", yytext); }
+"%"     { printf("OP_MOD: %s\n", yytext); }
+"%%"    { printf("OP_MOD2: %s\n", yytext); }
+
+"..="   { printf("OP_RANGE_INCLUSIVE: %s\n", yytext); }
+"..<"   { printf("OP_RANGE_EXCLUSIVE: %s\n", yytext); }
+".."    { printf("OP_RANGE: %s\n", yytext); }
+
+"."     { printf("OP_DOT: %s\n", yytext); }
+"->"    { printf("OP_ARROW: %s\n", yytext); }
+":"     { printf("COLON: %s\n", yytext); }
 
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
 [ \t\n]+                         { /* пропускаем пробелы */ }
