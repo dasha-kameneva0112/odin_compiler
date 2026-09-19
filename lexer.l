@@ -65,7 +65,7 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 <STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
 \'                               { BEGIN(CHAR); charbuf[0] = '\0'; }
-<CHAR>[^\\'\n]                  { strcat(charbuf, yytext); }
+<CHAR>[^\\'\n]                   { strcat(charbuf, yytext); }
 <CHAR>\\a                        { strcat(charbuf, "\a"); }  
 <CHAR>\\b                        { strcat(charbuf, "\b"); }
 <CHAR>\\e                        { strcat(charbuf, "\e"); }
@@ -84,6 +84,12 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 <CHAR>\n                         { printf("ERROR: end of line in rune literal\n"); return 1; }
 <CHAR><<EOF>>                    { printf("ERROR: unclosed rune literal\n"); return 1; }
 <CHAR>\'                         { printf("RUNE_LIT: %s\n", charbuf); BEGIN(INITIAL); }
+
+`                                { BEGIN(RAW_STRING); string[0] = '\0'; }
+<RAW_STRING>[^`\n]+              { strcat(string, yytext); }
+<RAW_STRING>\n                   { strcat(string, "\n"); }
+<RAW_STRING><<EOF>>              { printf("ERROR: unclosed raw string\n"); return 1; }
+<RAW_STRING>`                    { printf("RAW_STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
 "true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
 "package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }

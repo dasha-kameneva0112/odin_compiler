@@ -22,6 +22,12 @@ main :: proc() {
     hex_char := '\x41'
     unicode_char := '\u0041'
     unicode32_char := '\U00000041'
+
+    raw1 := `hello world`
+    raw2 := `hello\nworld`
+    raw3 := `\t\n\r\\`
+    raw4 := `\x41 \u0041 \U00000041`
+    raw5 := `hello "world" 'test'`
     
     x := 1
     
