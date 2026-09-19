@@ -9,6 +9,7 @@
 %{
 #include <stdio.h>
 int comment_depth = 0;
+char string[1000]; 
 %}
 
 DIGIT   [0-9]
@@ -31,6 +32,17 @@ TAG_CHAR    [A-Za-z_-]
 <COMMENT>.                       {  }
 <COMMENT><<EOF>>                 { printf("ERROR: unclosed quoted\n"); return 1; }
 <COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) BEGIN(INITIAL); }
+
+\"                               { BEGIN(STRING); string[0]=0; }
+<STRING> [^\\\"\n]+              { strcat(string, yytext); }
+<STRING> \\n                     { strcat(string, "\n"); }
+<STRING> \\\\                    { strcat(string, "\\"); }
+<STRING> \\\"                    { strcat(string, "\""); }
+<STRING> \\\n                    {}
+<STRING> \\[0-7]{1,3}            { char code[2]={0}; code[0]=(char)strtol(yytext+1, null, 8); strcat(string, code); }
+<STRING> \"                      { printf("%s", string); BEGIN(INITIAL); }
+<STRING> \n                      { printf("Error: end of line in string"); }
+<STRING> <<EOF>>                 { printf("Error: unclosed string\n"); }
 
 "true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
 "package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
