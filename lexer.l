@@ -9,7 +9,8 @@
 %{
 #include <stdio.h>
 int comment_depth = 0;
-char string[1000]; 
+char string[1000];
+char charbuf[16];
 %}
 
 DIGIT   [0-9]
@@ -43,6 +44,22 @@ TAG_CHAR    [A-Za-z_-]
 <STRING> \"                      { printf("%s", string); BEGIN(INITIAL); }
 <STRING> \n                      { printf("Error: end of line in string"); }
 <STRING> <<EOF>>                 { printf("Error: unclosed string\n"); }
+
+
+\'                               {BEGIN(CHAR); charbuf[0] = 0;}
+<CHAR>[^\\'\n]+                  { strcat (charbuf, yytext); }
+<CHAR>\\a                        { strcat (charbuf, "\a"); }  
+<CHAR>\\b                        { strcat (charbuf, "\b"); }
+<CHAR>\\e                        { strcat (charbuf, "\a"); }
+<CHAR>\\f                        { strcat (charbuf, "\f"); }
+<CHAR>\\n                        { strcat (charbuf, "\b"); }
+<CHAR>\\r                        { strcat (charbuf, "\r"); }
+<CHAR>\\t                        { strcat (charbuf, "\t"); }
+<CHAR>\\v                        { strcat (charbuf, "\v"); }
+<CHAR>\\\\                       { strcat (charbuf, "\\"); }
+<CHAR>\\\"                       { strcat (charbuf, "\""); }
+<CHAR>\\\'                       { strcat (charbuf, "'"); }
+
 
 "true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
 "package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
