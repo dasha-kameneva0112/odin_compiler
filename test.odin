@@ -13,6 +13,15 @@ main :: proc() {
     slash_test := "C:\\Users\\Odin"
     unicode_test := "Letter: \u0041"
     unicode32_test := "Symbol: \U00000041"
+
+    letter := 'A'
+    newline := '\n'
+    tab := '\t'
+    quote := '\''
+    backslash := '\\'
+    hex_char := '\x41'
+    unicode_char := '\u0041'
+    unicode32_char := '\U00000041'
     
     x := 1
     

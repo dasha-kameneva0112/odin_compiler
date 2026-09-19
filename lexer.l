@@ -64,21 +64,26 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 <STRING><<EOF>>                  { printf("Error: unclosed string\n"); return 1; }
 <STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
-
-\'                               {BEGIN(CHAR); charbuf[0] = 0;}
-<CHAR>[^\\'\n]+                  { strcat (charbuf, yytext); }
-<CHAR>\\a                        { strcat (charbuf, "\a"); }  
-<CHAR>\\b                        { strcat (charbuf, "\b"); }
-<CHAR>\\e                        { strcat (charbuf, "\a"); }
-<CHAR>\\f                        { strcat (charbuf, "\f"); }
-<CHAR>\\n                        { strcat (charbuf, "\b"); }
-<CHAR>\\r                        { strcat (charbuf, "\r"); }
-<CHAR>\\t                        { strcat (charbuf, "\t"); }
-<CHAR>\\v                        { strcat (charbuf, "\v"); }
-<CHAR>\\\\                       { strcat (charbuf, "\\"); }
-<CHAR>\\\"                       { strcat (charbuf, "\""); }
-<CHAR>\\\'                       { strcat (charbuf, "'"); }
-
+\'                               { BEGIN(CHAR); charbuf[0] = '\0'; }
+<CHAR>[^\\'\n]                  { strcat(charbuf, yytext); }
+<CHAR>\\a                        { strcat(charbuf, "\a"); }  
+<CHAR>\\b                        { strcat(charbuf, "\b"); }
+<CHAR>\\e                        { strcat(charbuf, "\e"); }
+<CHAR>\\f                        { strcat(charbuf, "\f"); }
+<CHAR>\\n                        { strcat(charbuf, "\n"); }
+<CHAR>\\r                        { strcat(charbuf, "\r"); }
+<CHAR>\\t                        { strcat(charbuf, "\t"); }
+<CHAR>\\v                        { strcat(charbuf, "\v"); }
+<CHAR>\\\\                       { strcat(charbuf, "\\"); }
+<CHAR>\\\"                       { strcat(charbuf, "\""); }
+<CHAR>\\\'                       { strcat(charbuf, "'"); }
+<CHAR>{ESC_OCTAL}                { strcat(charbuf, yytext); }  
+<CHAR>{ESC_HEX}                  { strcat(charbuf, yytext); }
+<CHAR>{ESC_UNICODE}              { strcat(charbuf, yytext); }
+<CHAR>{ESC_UNICODE32}            { strcat(charbuf, yytext); }
+<CHAR>\n                         { printf("ERROR: end of line in rune literal\n"); return 1; }
+<CHAR><<EOF>>                    { printf("ERROR: unclosed rune literal\n"); return 1; }
+<CHAR>\'                         { printf("RUNE_LIT: %s\n", charbuf); BEGIN(INITIAL); }
 
 "true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
 "package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
@@ -167,7 +172,7 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 "@"{ID_START}{ID_CHAR}*          { printf("ATTRIBUTE: %s\n", yytext); }
 "@"                              { printf("AT: %s\n", yytext); }
 
-"#"{ID_START}{ID_CHAR}*           { printf("DIRECTIVE: %s\n", yytext); }
+"#"{ID_START}{ID_CHAR}*          { printf("DIRECTIVE: %s\n", yytext); }
 "#+"{ID_START}{TAG_CHAR}*        { printf("BUILD_DIRECTIVE: %s\n", yytext); }
 
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
