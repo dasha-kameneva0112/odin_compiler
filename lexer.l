@@ -33,7 +33,7 @@ ESC_UNICODE \\u[0-9A-Fa-f]{4}
 ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 
 %%
-"//"[^\n]*                       { printf("ONE_LINE_COMMENT: %s\n",yytext); }
+"//"[^\n]*                       {  }
 
 "/*"                             { comment_depth = 1; BEGIN(COMMENT); }
 <COMMENT>"/*"                    { comment_depth++; }
@@ -178,8 +178,8 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 "@"{ID_START}{ID_CHAR}*          { printf("ATTRIBUTE: %s\n", yytext); }
 "@"                              { printf("AT: %s\n", yytext); }
 
-"#"{ID_START}{ID_CHAR}*          { printf("DIRECTIVE: %s\n", yytext); }
 "#+"{ID_START}{TAG_CHAR}*        { printf("BUILD_DIRECTIVE: %s\n", yytext); }
+"#"{ID_START}{ID_CHAR}*          { printf("DIRECTIVE: %s\n", yytext); }
 
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
 [ \t\r\n]+                       { /* пропускаем пробелы */ }
