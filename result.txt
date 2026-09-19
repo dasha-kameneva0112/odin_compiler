@@ -1,18 +1,36 @@
 KEYWORD: package
 IDENTIFIER: main
 KEYWORD: import
-SYMBOL: "
-IDENTIFIER: core
-COLON: :
-IDENTIFIER: fmt
-SYMBOL: "
+STRING_LIT: core:fmt
 IDENTIFIER: main
 OP_DECL_TYPED: ::
 KEYWORD: proc
 LPAREN: (
 RPAREN: )
 LBRACE: {
-ONE_LINE_COMMENT: // это однострочный комментарий, должен полностью исчезнуть
+ONE_LINE_COMMENT: // Однострочный комментарий
+IDENTIFIER: name
+OP_DECL_INFERRED: :=
+STRING_LIT: Hello, Odin!
+IDENTIFIER: message
+OP_DECL_INFERRED: :=
+STRING_LIT: Hello
+World
+IDENTIFIER: tab_test
+OP_DECL_INFERRED: :=
+STRING_LIT: Hello	World
+IDENTIFIER: quote_test
+OP_DECL_INFERRED: :=
+STRING_LIT: He said: "Hello!"
+IDENTIFIER: slash_test
+OP_DECL_INFERRED: :=
+STRING_LIT: C:\Users\Odin
+IDENTIFIER: unicode_test
+OP_DECL_INFERRED: :=
+STRING_LIT: Letter: \u0041
+IDENTIFIER: unicode32_test
+OP_DECL_INFERRED: :=
+STRING_LIT: Symbol: \U00000041
 IDENTIFIER: x
 OP_DECL_INFERRED: :=
 DECIMAL_LIT: 1
@@ -71,10 +89,7 @@ OP_DECL_INFERRED: :=
 IMAGINARY_LIT: 0z15i
 IDENTIFIER: name
 OP_DECL_INFERRED: :=
-SYMBOL: "
-IDENTIFIER: Odin
-IDENTIFIER: Language
-SYMBOL: "
+STRING_LIT: Odin Language
 IDENTIFIER: name2
 OP_DECL_INFERRED: :=
 NIL_LIT: nil
@@ -85,38 +100,13 @@ IDENTIFIER: fmt
 OP_DOT: .
 IDENTIFIER: println
 LPAREN: (
-SYMBOL: "
-UNDEFINED_LIT: ---
-IDENTIFIER: Literal
-IDENTIFIER: Demonstration
-UNDEFINED_LIT: ---
-SYMBOL: "
+STRING_LIT: --- Literal Demonstration ---
 RPAREN: )
 IDENTIFIER: fmt
 OP_DOT: .
 IDENTIFIER: printfln
 LPAREN: (
-SYMBOL: "
-IDENTIFIER: x
-COLON: :
-OP_MOD: %
-IDENTIFIER: d
-COMMA: ,
-IDENTIFIER: y
-COLON: :
-OP_MOD: %
-IDENTIFIER: d
-COMMA: ,
-IDENTIFIER: z
-COLON: :
-OP_MOD: %
-IDENTIFIER: d
-COMMA: ,
-IDENTIFIER: hex
-COLON: :
-OP_MOD: %
-IDENTIFIER: d
-SYMBOL: "
+STRING_LIT: x: %d, y: %d, z: %d, hex: %d
 COMMA: ,
 IDENTIFIER: x
 COMMA: ,
@@ -130,22 +120,7 @@ IDENTIFIER: fmt
 OP_DOT: .
 IDENTIFIER: printfln
 LPAREN: (
-SYMBOL: "
-IDENTIFIER: Float
-COLON: :
-OP_MOD: %
-IDENTIFIER: f
-COMMA: ,
-IDENTIFIER: Imaginary
-COLON: :
-OP_MOD: %
-IDENTIFIER: v
-COMMA: ,
-IDENTIFIER: String
-COLON: :
-OP_MOD: %
-IDENTIFIER: s
-SYMBOL: "
+STRING_LIT: Float: %f, Imaginary: %v, String: %s
 COMMA: ,
 IDENTIFIER: pi
 COMMA: ,
@@ -162,9 +137,7 @@ IDENTIFIER: fmt
 OP_DOT: .
 IDENTIFIER: println
 LPAREN: (
-SYMBOL: "
-NIL_LIT: nil
-SYMBOL: "
+STRING_LIT: nil
 RPAREN: )
 RBRACE: }
 IDENTIFIER: uninit_val
@@ -250,15 +223,7 @@ IDENTIFIER: fmt
 OP_DOT: .
 IDENTIFIER: println
 LPAREN: (
-SYMBOL: "
-IDENTIFIER: Found
-IDENTIFIER: a
-IDENTIFIER: number
-IDENTIFIER: divisible
-IDENTIFIER: by
-DECIMAL_LIT: 7
-COLON: :
-SYMBOL: "
+STRING_LIT: Found a number divisible by 7:
 COMMA: ,
 IDENTIFIER: found
 RPAREN: )
@@ -269,10 +234,7 @@ IDENTIFIER: fmt
 OP_DOT: .
 IDENTIFIER: println
 LPAREN: (
-SYMBOL: "
-IDENTIFIER: Not
-IDENTIFIER: found
-SYMBOL: "
+STRING_LIT: Not found
 RPAREN: )
 RBRACE: }
 RBRACE: }

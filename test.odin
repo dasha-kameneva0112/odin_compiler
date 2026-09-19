@@ -3,13 +3,23 @@ package main
 import "core:fmt"
 
 main :: proc() {
-    // это однострочный комментарий, должен полностью исчезнуть
-    x := 1
 
-   /* это простой
-   многострочный комментарий,
-   тоже должен исчезнуть целиком */
-   y := 2
+    // Однострочный комментарий
+
+    name := "Hello, Odin!"
+    message := "Hello\nWorld"
+    tab_test := "Hello\tWorld"
+    quote_test := "He said: \"Hello!\""
+    slash_test := "C:\\Users\\Odin"
+    unicode_test := "Letter: \u0041"
+    unicode32_test := "Symbol: \U00000041"
+    
+    x := 1
+    
+    /* это простой
+    многострочный комментарий,
+    тоже должен исчезнуть целиком */
+    y := 2
 
     x := 123
     y := 0b1010       

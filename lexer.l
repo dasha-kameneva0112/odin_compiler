@@ -8,6 +8,9 @@
 
 %{
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 int comment_depth = 0;
 char string[1000];
 char charbuf[16];
@@ -24,6 +27,11 @@ ID_START    ({LETTER}|_)
 ID_CHAR     ({LETTER}|{DIGIT}|_)
 TAG_CHAR    [A-Za-z_-]
 
+ESC_OCTAL   \\[0-7]{1,3}
+ESC_HEX     \\x[0-9A-Fa-f]{2}
+ESC_UNICODE \\u[0-9A-Fa-f]{4}
+ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
+
 %%
 "//"[^\n]*                       { printf("ONE_LINE_COMMENT: %s\n",yytext); }
 
@@ -31,19 +39,30 @@ TAG_CHAR    [A-Za-z_-]
 <COMMENT>"/*"                    { comment_depth++; }
 <COMMENT>\n                      {  }
 <COMMENT>.                       {  }
-<COMMENT><<EOF>>                 { printf("ERROR: unclosed quoted\n"); return 1; }
+<COMMENT><<EOF>>                 { printf("ERROR: unclosed comment\n"); return 1; }
 <COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) BEGIN(INITIAL); }
 
-\"                               { BEGIN(STRING); string[0]=0; }
-<STRING> [^\\\"\n]+              { strcat(string, yytext); }
-<STRING> \\n                     { strcat(string, "\n"); }
-<STRING> \\\\                    { strcat(string, "\\"); }
-<STRING> \\\"                    { strcat(string, "\""); }
-<STRING> \\\n                    {}
-<STRING> \\[0-7]{1,3}            { char code[2]={0}; code[0]=(char)strtol(yytext+1, null, 8); strcat(string, code); }
-<STRING> \"                      { printf("%s", string); BEGIN(INITIAL); }
-<STRING> \n                      { printf("Error: end of line in string"); }
-<STRING> <<EOF>>                 { printf("Error: unclosed string\n"); }
+\"                               { BEGIN(STRING); string[0]='\0'; }
+<STRING>[^\\\"\n]+               { strcat(string, yytext); }
+<STRING>\\n                      { strcat(string, "\n"); }
+<STRING>\\a                      { strcat(string, "\a"); }
+<STRING>\\b                      { strcat(string, "\b"); }
+<STRING>\\e                      { strcat(string, "\e"); }
+<STRING>\\f                      { strcat(string, "\f"); }
+<STRING>\\r                      { strcat(string, "\r"); }
+<STRING>\\t                      { strcat(string, "\t"); }
+<STRING>\\v                      { strcat(string, "\v"); }
+<STRING>\\\\                     { strcat(string, "\\"); }
+<STRING>\\\"                     { strcat(string, "\""); }
+<STRING>\\'                      { strcat(string, "'"); }
+<STRING>{ESC_OCTAL}              { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(string, code); }
+<STRING>{ESC_HEX}                { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(string, code); }
+<STRING>{ESC_UNICODE}            { strcat(string, yytext); }
+<STRING>{ESC_UNICODE32}          { strcat(string, yytext); }
+<STRING>\\\n                     { /* продолжение строки на следующей строке */ }
+<STRING>\n                       { printf("Error: end of line in string"); BEGIN(INITIAL); return 1; }
+<STRING><<EOF>>                  { printf("Error: unclosed string\n"); return 1; }
+<STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
 
 \'                               {BEGIN(CHAR); charbuf[0] = 0;}
@@ -67,7 +86,7 @@ TAG_CHAR    [A-Za-z_-]
 "nil"                            { printf("NIL_LIT: %s\n",yytext); }
 "---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
 "{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
-"?"                              { printf("QUESTION: %s\n", yytext); }
+"?"                              { printf("AUTO_LEN: %s\n", yytext); }
 
 0|[1-9](_?{DIGIT})*              { printf("DECIMAL_LIT: %s\n", yytext); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { printf("BINARY_LIT: %s\n", yytext); }
