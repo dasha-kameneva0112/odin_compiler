@@ -23,6 +23,14 @@ main :: proc() {
     i1 := 1.
     pi2 := 3.14_159
     imag_num := 123i   
+    
+    // --- Добавленные примеры мнимых чисел с разными суффиксами и основаниями ---
+    imag_hex := 0xFFi
+    imag_bin := 0b1010j
+    imag_oct := 0o75_5k
+    imag_float := 3.14if
+    imag_doz := 0z15i
+
     name := "Odin Language" 
     name2 := nil 
     bool_name := true
@@ -31,11 +39,11 @@ main :: proc() {
     fmt.printfln("x: %d, y: %d, z: %d, hex: %d", x, y, z, hex_val)
     fmt.printfln("Float: %f, Imaginary: %v, String: %s", pi, imag_num, name)
 
-     if ptr == nil {
+    if ptr == nil {
         fmt.println("nil")
-     }
+    }
     uninit_val: int = ---
-    type_zero := MyStruct{} 
+    type_zero := MyStruct{} 
     auto_array := [?]int{10, 20, 30, 40}
 
     numbers := [10]int{3, 5, 8, 14, 22, 35, 40, 49, 50, 70}
