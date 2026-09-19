@@ -20,6 +20,7 @@ HEX_DIGIT  [0-9a-fA-F]
 LETTER      [a-zA-Z]
 ID_START    ({LETTER}|_)
 ID_CHAR     ({LETTER}|{DIGIT}|_)
+TAG_CHAR    [A-Za-z_-]
 
 %%
 "//"[^\n]*                       { printf("ONE_LINE_COMMENT: %s\n",yytext); }
@@ -99,6 +100,9 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 
 "."     { printf("OP_DOT: %s\n", yytext); }
 "->"    { printf("OP_ARROW: %s\n", yytext); }
+
+"::"    { printf("OP_DECL_TYPED: %s\n", yytext); }
+":="    { printf("OP_DECL_INFERRED: %s\n", yytext); }
 ":"     { printf("COLON: %s\n", yytext); }
 
 "("     { printf("LPAREN: %s\n", yytext); }
@@ -111,6 +115,12 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 ";"     { printf("SEMICOLON: %s\n", yytext); }
 
 "bool"|"b8"|"b16"|"b32"|"b64"|"int"|"i8"|"i16"|"i32"|"i64"|"i128"|"uint"|"u8"|"u16"|"u32"|"u64"|"u128"|"uintptr"|"f16"|"f32"|"f64"|"complex32"|"complex64"|"complex128"|"quaternion64"|"quaternion128"|"quaternion256"|"string"|"cstring"|"byte"|"rune"|"rawptr"|"any"      { printf("BUILTIN_TYPE: %s\n", yytext); }
+
+"@"{ID_START}{ID_CHAR}*          { printf("ATTRIBUTE: %s\n", yytext); }
+"@"                              { printf("AT: %s\n", yytext); }
+
+"#"{ID_START}{ID_CHAR}*           { printf("DIRECTIVE: %s\n", yytext); }
+"#+"{ID_START}{TAG_CHAR}*        { printf("BUILD_DIRECTIVE: %s\n", yytext); }
 
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
 [ \t\r\n]+                       { /* пропускаем пробелы */ }
