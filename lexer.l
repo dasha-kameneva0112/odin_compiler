@@ -37,7 +37,7 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 "nil"                            { printf("NIL_LIT: %s\n",yytext); }
 "---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
 "{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
-"?"                              { printf("AUTO_LEN: %s\n", yytext); }
+"?"                              { printf("QUESTION: %s\n", yytext); }
 
 0|[1-9](_?{DIGIT})*              { printf("DECIMAL_LIT: %s\n", yytext); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { printf("BINARY_LIT: %s\n", yytext); }
