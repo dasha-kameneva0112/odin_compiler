@@ -58,11 +58,11 @@ void append_utf8(char *dest, unsigned int codepoint) {
 
 %}
 
-DIGIT   [0-9]
+DIGIT       [0-9]
 BIN_DIGIT   [01]
 OCT_DIGIT   [0-7]
-DOZ_DIGIT  [0-9abAB]
-HEX_DIGIT  [0-9a-fA-F]
+DOZ_DIGIT   [0-9abAB]
+HEX_DIGIT   [0-9a-fA-F]
   
 LETTER      [a-zA-Z]
 ID_START    ({LETTER}|_)
@@ -70,9 +70,9 @@ ID_CHAR     ({LETTER}|{DIGIT}|_)
 TAG_CHAR    [A-Za-z_-]
 
 ESC_OCTAL   \\[0-7]{1,3}
-ESC_HEX     \\x[0-9A-Fa-f]{2}
-ESC_UNICODE \\u[0-9A-Fa-f]{4}
-ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
+ESC_HEX     \\x{HEX_DIGIT}{2}
+ESC_UNICODE \\u{HEX_DIGIT}{4}
+ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 %%
 "//"[^\n]*                       {  }
@@ -121,8 +121,47 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 <RAW_STRING><<EOF>>              { printf("ERROR: unclosed raw string\n"); return 1; }
 <RAW_STRING>`                    { printf("RAW_STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
-"true"|"false"                   { printf("BOOL_LIT: %s\n", yytext); }
-"package"|"import"|"proc"|"asm"|"matrix"|"not_in"|"or_break"|"or_continue"|"or_else"|"or_return"|"return"|"struct"|"switch"|"transmute"|"typeid"|"union"|"using"|"when"|"where"|"auto_cast"|"bit_field"|"bit_set"|"break"|"case"|"cast"|"context"|"continue"|"defer"|"distinct"|"do"|"dynamic"|"else"|"enum"|"fallthrough"|"for"|"foreign"|"if"|"in"|"map"                  { printf("KEYWORD: %s\n", yytext); }
+"true"                           { printf("TRUE: true\n"); }
+"false"                          { printf("FALSE: false\n"); }
+"asm"                            { printf("ASM: asm\n"); }
+"auto_cast"                      { printf("AUTO_CAST: auto_cast\n"); }
+"bit_field"                      { printf("BIT_FIELD: bit_field\n"); }
+"bit_set"                        { printf("BIT_SET: bit_set\n"); }
+"break"                          { printf("BREAK: break\n"); }
+"case"                           { printf("CASE: case\n"); }
+"cast"                           { printf("CAST: cast\n"); }
+"context"                        { printf("CONTEXT: context\n"); }
+"continue"                       { printf("CONTINUE: continue\n"); }
+"defer"                          { printf("DEFER: defer\n"); }
+"distinct"                       { printf("DISTINCT: distinct\n"); }
+"do"                             { printf("DO: do\n"); }
+"dynamic"                        { printf("DYNAMIC: dynamic\n"); }
+"else"                           { printf("ELSE: else\n"); }
+"enum"                           { printf("ENUM: enum\n"); }
+"fallthrough"                    { printf("FALLTHROUGH: fallthrough\n"); }
+"for"                            { printf("FOR: for\n"); }
+"foreign"                        { printf("FOREIGN: foreign\n"); }
+"if"                             { printf("IF: if\n"); }
+"import"                         { printf("IMPORT: import\n"); }
+"in"                             { printf("IN: in\n"); }
+"map"                            { printf("MAP: map\n"); }
+"matrix"                         { printf("MATRIX: matrix\n"); }
+"not_in"                         { printf("NOT_IN: not_in\n"); }
+"or_break"                       { printf("OR_BREAK: or_break\n"); }
+"or_continue"                    { printf("OR_CONTINUE: or_continue\n"); }
+"or_else"                        { printf("OR_ELSE: or_else\n"); }
+"or_return"                      { printf("OR_RETURN: or_return\n"); }
+"package"                        { printf("PACKAGE: package\n"); }
+"proc"                           { printf("PROC: proc\n"); }
+"return"                         { printf("RETURN: return\n"); }
+"struct"                         { printf("STRUCT: struct\n"); }
+"switch"                         { printf("SWITCH: switch\n"); }
+"transmute"                      { printf("TRANSMUTE: transmute\n"); }
+"typeid"                         { printf("TYPEID: typeid\n"); }
+"union"                          { printf("UNION: union\n"); }
+"using"                          { printf("USING: using\n"); }
+"when"                           { printf("WHEN: when\n"); }
+"where"                          { printf("WHERE: where\n"); }
 
 "nil"                            { printf("NIL_LIT: %s\n",yytext); }
 "---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
@@ -203,7 +242,39 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 ","     { printf("COMMA: %s\n", yytext); }
 ";"     { printf("SEMICOLON: %s\n", yytext); }
 
-"bool"|"b8"|"b16"|"b32"|"b64"|"int"|"i8"|"i16"|"i32"|"i64"|"i128"|"uint"|"u8"|"u16"|"u32"|"u64"|"u128"|"uintptr"|"f16"|"f32"|"f64"|"complex32"|"complex64"|"complex128"|"quaternion64"|"quaternion128"|"quaternion256"|"string"|"cstring"|"byte"|"rune"|"rawptr"|"any"      { printf("BUILTIN_TYPE: %s\n", yytext); }
+"bool"          { printf("BOOL: bool\n"); }
+"b8"            { printf("B8: b8\n"); }
+"b16"           { printf("B16: b16\n"); }
+"b32"           { printf("B32: b32\n"); }
+"b64"           { printf("B64: b64\n"); }
+"int"           { printf("INT: int\n"); }
+"i8"            { printf("I8: i8\n"); }
+"i16"           { printf("I16: i16\n"); }
+"i32"           { printf("I32: i32\n"); }
+"i64"           { printf("I64: i64\n"); }
+"i128"          { printf("I128: i128\n"); }
+"uint"          { printf("UINT: uint\n"); }
+"u8"            { printf("U8: u8\n"); }
+"u16"           { printf("U16: u16\n"); }
+"u32"           { printf("U32: u32\n"); }
+"u64"           { printf("U64: u64\n"); }
+"u128"          { printf("U128: u128\n"); }
+"uintptr"       { printf("UINTPTR: uintptr\n"); }
+"f16"           { printf("F16: f16\n"); }
+"f32"           { printf("F32: f32\n"); }
+"f64"           { printf("F64: f64\n"); }
+"complex32"     { printf("COMPLEX32: complex32\n"); }
+"complex64"     { printf("COMPLEX64: complex64\n"); }
+"complex128"    { printf("COMPLEX128: complex128\n"); }
+"quaternion64"  { printf("QUATERNION64: quaternion64\n"); }
+"quaternion128" { printf("QUATERNION128: quaternion128\n"); }
+"quaternion256" { printf("QUATERNION256: quaternion256\n"); }
+"string"        { printf("STRING: string\n"); }
+"cstring"       { printf("CSTRING: cstring\n"); }
+"byte"          { printf("BYTE: byte\n"); }
+"rune"          { printf("RUNE: rune\n"); }
+"rawptr"        { printf("RAWPTR: rawptr\n"); }
+"any"           { printf("ANY: any\n"); }
 
 "@"{ID_START}{ID_CHAR}*          { printf("ATTRIBUTE: %s\n", yytext); }
 "@"                              { printf("AT: %s\n", yytext); }
