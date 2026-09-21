@@ -14,6 +14,7 @@
 int comment_depth = 0;
 char string[1000];
 char charbuf[16];
+char *buf; 
 %}
 
 DIGIT   [0-9]
@@ -42,48 +43,36 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 <COMMENT><<EOF>>                 { printf("ERROR: unclosed comment\n"); return 1; }
 <COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) BEGIN(INITIAL); }
 
-\"                               { BEGIN(STRING); string[0]='\0'; }
+\"                               { buf = string; BEGIN(STRING); string[0]='\0'; }
 <STRING>[^\\\"\n]+               { strcat(string, yytext); }
-<STRING>\\n                      { strcat(string, "\n"); }
-<STRING>\\a                      { strcat(string, "\a"); }
-<STRING>\\b                      { strcat(string, "\b"); }
-<STRING>\\e                      { strcat(string, "\e"); }
-<STRING>\\f                      { strcat(string, "\f"); }
-<STRING>\\r                      { strcat(string, "\r"); }
-<STRING>\\t                      { strcat(string, "\t"); }
-<STRING>\\v                      { strcat(string, "\v"); }
-<STRING>\\\\                     { strcat(string, "\\"); }
-<STRING>\\\"                     { strcat(string, "\""); }
-<STRING>\\'                      { strcat(string, "'"); }
-<STRING>{ESC_OCTAL}              { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(string, code); }
-<STRING>{ESC_HEX}                { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(string, code); }
-<STRING>{ESC_UNICODE}            { strcat(string, yytext); }
-<STRING>{ESC_UNICODE32}          { strcat(string, yytext); }
 <STRING>\\\n                     { /* продолжение строки на следующей строке */ }
 <STRING>\n                       { printf("Error: end of line in string"); BEGIN(INITIAL); return 1; }
 <STRING><<EOF>>                  { printf("Error: unclosed string\n"); return 1; }
 <STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
-\'                               { BEGIN(CHAR); charbuf[0] = '\0'; }
+\'                               { buf = charbuf; BEGIN(CHAR); charbuf[0] = '\0'; }
 <CHAR>[^\\'\n]                   { strcat(charbuf, yytext); }
-<CHAR>\\a                        { strcat(charbuf, "\a"); }  
-<CHAR>\\b                        { strcat(charbuf, "\b"); }
-<CHAR>\\e                        { strcat(charbuf, "\e"); }
-<CHAR>\\f                        { strcat(charbuf, "\f"); }
-<CHAR>\\n                        { strcat(charbuf, "\n"); }
-<CHAR>\\r                        { strcat(charbuf, "\r"); }
-<CHAR>\\t                        { strcat(charbuf, "\t"); }
-<CHAR>\\v                        { strcat(charbuf, "\v"); }
-<CHAR>\\\\                       { strcat(charbuf, "\\"); }
-<CHAR>\\\"                       { strcat(charbuf, "\""); }
-<CHAR>\\\'                       { strcat(charbuf, "'"); }
-<CHAR>{ESC_OCTAL}                { strcat(charbuf, yytext); }  
-<CHAR>{ESC_HEX}                  { strcat(charbuf, yytext); }
-<CHAR>{ESC_UNICODE}              { strcat(charbuf, yytext); }
-<CHAR>{ESC_UNICODE32}            { strcat(charbuf, yytext); }
 <CHAR>\n                         { printf("ERROR: end of line in rune literal\n"); return 1; }
 <CHAR><<EOF>>                    { printf("ERROR: unclosed rune literal\n"); return 1; }
 <CHAR>\'                         { printf("RUNE_LIT: %s\n", charbuf); BEGIN(INITIAL); }
+
+
+<STRING,CHAR>\\n                      { strcat(buf, "\n"); }
+<STRING,CHAR>\\a                      { strcat(buf, "\a"); }
+<STRING,CHAR>\\b                      { strcat(buf, "\b"); }
+<STRING,CHAR>\\e                      { strcat(buf, "\e"); }
+<STRING,CHAR>\\f                      { strcat(buf, "\f"); }
+<STRING,CHAR>\\r                      { strcat(buf, "\r"); }
+<STRING,CHAR>\\t                      { strcat(buf, "\t"); }
+<STRING,CHAR>\\v                      { strcat(buf, "\v"); }
+<STRING,CHAR>\\\\                     { strcat(buf, "\\"); }
+<STRING,CHAR>\\\"                     { strcat(buf, "\""); }
+<STRING,CHAR>\\'                      { strcat(buf, "'"); }
+<STRING,CHAR>{ESC_OCTAL}              { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(buf, code); }
+<STRING,CHAR>{ESC_HEX}                { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(buf, code); }
+<STRING,CHAR>{ESC_UNICODE}            { strcat(buf, yytext); }
+<STRING,CHAR>{ESC_UNICODE32}          { strcat(buf, yytext); }
+
 
 `                                { BEGIN(RAW_STRING); string[0] = '\0'; }
 <RAW_STRING>[^`\n]+              { strcat(string, yytext); }
