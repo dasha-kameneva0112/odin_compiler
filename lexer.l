@@ -31,6 +31,31 @@ char *strip_us(const char *src, char *dest)
     return dest;
 }
 
+void append_utf8(char *dest, unsigned int codepoint) {
+    char utf8[5] = {0};
+    int n = 0;
+    if (codepoint <= 0x7F) {
+        utf8[0] = (char)codepoint; n = 1;
+    } else if (codepoint <= 0x7FF) {
+        utf8[0] = (char)(0xC0 | (codepoint >> 6));
+        utf8[1] = (char)(0x80 | (codepoint & 0x3F));
+        n = 2;
+    } else if (codepoint <= 0xFFFF) {
+        utf8[0] = (char)(0xE0 | (codepoint >> 12));
+        utf8[1] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
+        utf8[2] = (char)(0x80 | (codepoint & 0x3F));
+        n = 3;
+    } else {
+        utf8[0] = (char)(0xF0 | (codepoint >> 18));
+        utf8[1] = (char)(0x80 | ((codepoint >> 12) & 0x3F));
+        utf8[2] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
+        utf8[3] = (char)(0x80 | (codepoint & 0x3F));
+        n = 4;
+    }
+    utf8[n] = '\0';
+    strcat(dest, utf8);
+}
+
 %}
 
 DIGIT   [0-9]
@@ -86,8 +111,8 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 <STRING,CHAR>\\'                      { strcat(buf, "'"); }
 <STRING,CHAR>{ESC_OCTAL}              { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(buf, code); }
 <STRING,CHAR>{ESC_HEX}                { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(buf, code); }
-<STRING,CHAR>{ESC_UNICODE}            { strcat(buf, yytext); }
-<STRING,CHAR>{ESC_UNICODE32}          { strcat(buf, yytext); }
+<STRING,CHAR>{ESC_UNICODE}            { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
+<STRING,CHAR>{ESC_UNICODE32}          { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
 
 
 `                                { BEGIN(RAW_STRING); string[0] = '\0'; }
