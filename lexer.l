@@ -15,6 +15,22 @@ int comment_depth = 0;
 char string[1000];
 char charbuf[16];
 char *buf; 
+
+char *strip_us(const char *src, char *dest)
+{
+    int j = 0;
+
+    for (int i = 0; src[i] != '\0'; i++)
+    {
+        if (src[i] != '_')
+        {
+            dest[j++] = src[i];
+        }
+    }
+    dest[j] = '\0';
+    return dest;
+}
+
 %}
 
 DIGIT   [0-9]
@@ -88,15 +104,15 @@ ESC_UNICODE32 \\U[0-9A-Fa-f]{8}
 "{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
 "?"                              { printf("AUTO_LEN: %s\n", yytext); }
 
-0|[1-9](_?{DIGIT})*              { printf("DECIMAL_LIT: %s\n", yytext); }
-0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { printf("BINARY_LIT: %s\n", yytext); }
-0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { printf("OCTAL_LIT: %s\n", yytext); }
-0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { printf("DOZENAL_LIT: %s\n", yytext); }
-0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { printf("HEX_LIT: %s\n", yytext); }
-0d{DIGIT}(_?{DIGIT})*            { printf("EX_DECIMAL_LIT: %s\n", yytext); }
+0|[1-9](_?{DIGIT})*              { char c[128]; printf("DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
+0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; printf("BINARY_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 2)); }
+0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; printf("OCTAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 8)); }
+0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { char c[128]; printf("DOZENAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 12)); }
+0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; printf("HEX_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 16)); }
+0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
 
-({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.      { printf("FLOAT_LIT: %s\n", yytext); }
-((0|[1-9](_?{DIGIT})*)|(0b{BIN_DIGIT}(_?{BIN_DIGIT})*)|(0o{OCT_DIGIT}(_?{OCT_DIGIT})*)|(0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*)|(0x{HEX_DIGIT}(_?{HEX_DIGIT})*)|(0d{DIGIT}(_?{DIGIT})*)|(({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.))[ijk] {  printf("IMAGINARY_LIT: %s\n", yytext); }
+({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
+((0|[1-9](_?{DIGIT})*)|(0b{BIN_DIGIT}(_?{BIN_DIGIT})*)|(0o{OCT_DIGIT}(_?{OCT_DIGIT})*)|(0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*)|(0x{HEX_DIGIT}(_?{HEX_DIGIT})*)|(0d{DIGIT}(_?{DIGIT})*)|(({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.))[ijk] { char c[128]; strip_us(yytext,c); c[strlen(c)-1]='\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng-1]); }
 
 "+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
 "-="    { printf("OP_SUB_ASSIGN: %s\n", yytext); }
