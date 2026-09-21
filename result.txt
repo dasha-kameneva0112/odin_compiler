@@ -8,7 +8,6 @@ KEYWORD: proc
 LPAREN: (
 RPAREN: )
 LBRACE: {
-ONE_LINE_COMMENT: // Однострочный комментарий
 IDENTIFIER: name
 OP_DECL_INFERRED: :=
 STRING_LIT: Hello, Odin!
@@ -110,7 +109,6 @@ FLOAT_LIT: 3.14_159
 IDENTIFIER: imag_num
 OP_DECL_INFERRED: :=
 IMAGINARY_LIT: 123i
-ONE_LINE_COMMENT: // --- Добавленные примеры мнимых чисел с разными суффиксами и основаниями ---
 IDENTIFIER: imag_hex
 OP_DECL_INFERRED: :=
 IMAGINARY_LIT: 0xFFi
