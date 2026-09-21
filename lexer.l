@@ -166,7 +166,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "nil"                            { printf("NIL_LIT: %s\n",yytext); }
 "---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
 "{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
-"?"                              { printf("AUTO_LEN: %s\n", yytext); }
+"?"                              { printf("QUESTION: %s\n", yytext); }
 
 0|[1-9](_?{DIGIT})*              { char c[128]; printf("DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; printf("BINARY_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 2)); }
@@ -229,8 +229,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "."     { printf("OP_DOT: %s\n", yytext); }
 "->"    { printf("OP_ARROW: %s\n", yytext); }
 
-"::"    { printf("OP_DECL_TYPED: %s\n", yytext); }
-":="    { printf("OP_DECL_INFERRED: %s\n", yytext); }
 ":"     { printf("COLON: %s\n", yytext); }
 
 "("     { printf("LPAREN: %s\n", yytext); }
@@ -285,7 +283,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
 [ \t\r\n]+                       { /* пропускаем пробелы */ }
 
-.       { printf("SYMBOL: %s\n", yytext); }
+.       { printf("ERROR: unknown symbol: %s\n", yytext); }
 
 %%
 
