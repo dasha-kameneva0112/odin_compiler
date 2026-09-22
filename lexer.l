@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 int comment_depth = 0;
-char string[1000];
+char string[20480];
 char charbuf[16];
 char *buf; 
 
