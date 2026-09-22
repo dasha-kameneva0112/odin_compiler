@@ -13,7 +13,7 @@
 
 int comment_depth = 0;
 char string[20480];
-char charbuf[16];
+char charbuf[32];
 char *buf; 
 
 char *strip_us(const char *src, char *dest)
@@ -187,7 +187,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
 
 ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
-({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
+({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %ld\n", strtod(strip_us(yytext,c), NULL)); }
 ({INT_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
 
 "+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
