@@ -63,13 +63,21 @@ BIN_DIGIT   [01]
 OCT_DIGIT   [0-7]
 DOZ_DIGIT   [0-9abAB]
 HEX_DIGIT   [0-9a-fA-F]
+
+DECIMAL_LIT     (0|[1-9](_?{DIGIT})*)
+BINARY_LIT      0b{BIN_DIGIT}(_?{BIN_DIGIT})*
+OCTAL_LIT       0o{OCT_DIGIT}(_?{OCT_DIGIT})*
+DOZENAL_LIT     0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*
+HEX_LIT         0x{HEX_DIGIT}(_?{HEX_DIGIT})*
+EX_DECIMAL_LIT  0d{DIGIT}(_?{DIGIT})*
+EXPONENT        (e|E)[+-]?{DIGIT}+
   
 LETTER      [a-zA-Z]
 ID_START    ({LETTER}|_)
 ID_CHAR     ({LETTER}|{DIGIT}|_)
 TAG_CHAR    [A-Za-z_-]
 
-ESC_OCTAL   \\[0-7]{1,3}
+ESC_OCTAL   \\[0-7]{3}
 ESC_HEX     \\x{HEX_DIGIT}{2}
 ESC_UNICODE \\u{HEX_DIGIT}{4}
 ESC_UNICODE32 \\U{HEX_DIGIT}{8}
@@ -175,8 +183,9 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; printf("HEX_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 16)); }
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
 
-({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
-((0|[1-9](_?{DIGIT})*)|(0b{BIN_DIGIT}(_?{BIN_DIGIT})*)|(0o{OCT_DIGIT}(_?{OCT_DIGIT})*)|(0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*)|(0x{HEX_DIGIT}(_?{HEX_DIGIT})*)|(0d{DIGIT}(_?{DIGIT})*)|(({DIGIT}(_?{DIGIT})*)?\.({DIGIT}_?{DIGIT}*)?(_?[eE]?[-+]?{DIGIT}+)+|({DIGIT}(_?{DIGIT})*)\.))[ijk] { char c[128]; strip_us(yytext,c); c[strlen(c)-1]='\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng-1]); }
+({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
+({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
+({INT_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
 
 "+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
 "-="    { printf("OP_SUB_ASSIGN: %s\n", yytext); }
