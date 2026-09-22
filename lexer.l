@@ -179,6 +179,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
 "?"                              { printf("QUESTION: %s\n", yytext); }
 
+
 0|[1-9](_?{DIGIT})*              { char c[128]; printf("DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; printf("BINARY_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 2)); }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; printf("OCTAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 8)); }
@@ -186,8 +187,8 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; printf("HEX_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 16)); }
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
 
+({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
 ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
-({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %ld\n", strtol(strip_us(yytext,c), NULL)); }
 ({INT_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
 
 "+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
