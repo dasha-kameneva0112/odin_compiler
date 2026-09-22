@@ -92,7 +92,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 <STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
 \'                               { buf = charbuf; BEGIN(CHAR); charbuf[0] = '\0'; }
-<CHAR>[^\\'\n]                   { strcat(charbuf, yytext); }
+<CHAR>[^\\'\n]+                  { strcat(charbuf, yytext); }
 <CHAR>\n                         { printf("ERROR: end of line in rune literal\n"); return 1; }
 <CHAR><<EOF>>                    { printf("ERROR: unclosed rune literal\n"); return 1; }
 <CHAR>\'                         { printf("RUNE_LIT: %s\n", charbuf); BEGIN(INITIAL); }
@@ -230,6 +230,8 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "->"    { printf("OP_ARROW: %s\n", yytext); }
 
 ":"     { printf("COLON: %s\n", yytext); }
+"::"    { printf("OP_DECL_TYPED: %s\n", yytext); }
+":="    { printf("OP_DECL_INFERRED: %s\n", yytext); }
 
 "("     { printf("LPAREN: %s\n", yytext); }
 ")"     { printf("RPAREN: %s\n", yytext); }

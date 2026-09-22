@@ -84,4 +84,15 @@ main :: proc() {
     } else {
         fmt.println("Not found")
     }
+
+    for i in 0..<10 {}
+    for i in 1..=5 {}
+    for i in 0..<n {}
+
+    a := 3.14
+    b := 3.
+    c := .5
+    d := 1_000.5e-3
+    e := 1.
+    f := 2. + 3.
 }
