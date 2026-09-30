@@ -72,29 +72,41 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 <CHAR>[^\\'\n]+                  { strcat(charbuf, yytext); }
 <CHAR>\n                         { printf("ERROR: end of line in rune literal\n"); return 1; }
 <CHAR><<EOF>>                    { printf("ERROR: unclosed rune literal\n"); return 1; }
-<CHAR>\'                         { printf("RUNE_LIT: %s\n", charbuf); BEGIN(INITIAL); }
+<CHAR>\'                         {
+                                    int count = 0;
+                                    for (unsigned char *p = (unsigned char *)charbuf; *p; p++)
+                                        if ((*p & 0xC0) != 0x80) count++;   /* считаем символы UTF-8, а не байты */
+
+                                    if (count == 1)
+                                        printf("RUNE_LIT: %s\n", charbuf);
+                                    else if (count == 0)
+                                        printf("ERROR: empty rune literal\n");
+                                    else
+                                        printf("ERROR: rune literal must contain exactly one character: '%s'\n", charbuf);
+
+                                    BEGIN(INITIAL);
+                                   }
 
 
-<STRING,CHAR>\\n                      { strcat(buf, "\n"); }
-<STRING,CHAR>\\a                      { strcat(buf, "\a"); }
-<STRING,CHAR>\\b                      { strcat(buf, "\b"); }
-<STRING,CHAR>\\e                      { strcat(buf, "\e"); }
-<STRING,CHAR>\\f                      { strcat(buf, "\f"); }
-<STRING,CHAR>\\r                      { strcat(buf, "\r"); }
-<STRING,CHAR>\\t                      { strcat(buf, "\t"); }
-<STRING,CHAR>\\v                      { strcat(buf, "\v"); }
-<STRING,CHAR>\\\\                     { strcat(buf, "\\"); }
-<STRING,CHAR>\\\"                     { strcat(buf, "\""); }
-<STRING,CHAR>\\'                      { strcat(buf, "'"); }
-<STRING,CHAR>{ESC_OCTAL}              { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(buf, code); }
-<STRING,CHAR>{ESC_HEX}                { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(buf, code); }
-<STRING,CHAR>{ESC_UNICODE}            { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
-<STRING,CHAR>{ESC_UNICODE32}          { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
+<STRING,CHAR>\\n                   { strcat(buf, "\n"); }
+<STRING,CHAR>\\a                   { strcat(buf, "\a"); }
+<STRING,CHAR>\\b                   { strcat(buf, "\b"); }
+<STRING,CHAR>\\e                   { strcat(buf, "\e"); }
+<STRING,CHAR>\\f                   { strcat(buf, "\f"); }
+<STRING,CHAR>\\r                   { strcat(buf, "\r"); }
+<STRING,CHAR>\\t                   { strcat(buf, "\t"); }
+<STRING,CHAR>\\v                   { strcat(buf, "\v"); }
+<STRING,CHAR>\\\\                  { strcat(buf, "\\"); }
+<STRING,CHAR>\\\"                  { strcat(buf, "\""); }
+<STRING,CHAR>\\'                   { strcat(buf, "'"); }
+<STRING,CHAR>{ESC_OCTAL}           { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(buf, code); }
+<STRING,CHAR>{ESC_HEX}             { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(buf, code); }
+<STRING,CHAR>{ESC_UNICODE}         { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
+<STRING,CHAR>{ESC_UNICODE32}       { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
 
 
 `                                { BEGIN(RAW_STRING); string[0] = '\0'; }
-<RAW_STRING>[^`\n]+              { strcat(string, yytext); }
-<RAW_STRING>\n                   { strcat(string, "\n"); }
+<RAW_STRING>[^`]+              { strcat(string, yytext); }
 <RAW_STRING><<EOF>>              { printf("ERROR: unclosed raw string\n"); return 1; }
 <RAW_STRING>`                    { printf("RAW_STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
@@ -264,7 +276,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 {ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
 [ \t\r\n]+                       { /* пропускаем пробелы */ }
 
-.       { printf("ERROR: unknown symbol: %s\n", yytext); }
+<*>.       { printf("ERROR: unknown symbol: %s\n", yytext); }
 
 %%
 
