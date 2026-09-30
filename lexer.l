@@ -16,6 +16,7 @@ void append_utf8(char *dest, unsigned int codepoint);
 %}
 
 DIGIT       [0-9]
+LETTER      [a-zA-Z]
 BIN_DIGIT   [01]
 OCT_DIGIT   [0-7]
 DOZ_DIGIT   [0-9abAB]
@@ -31,11 +32,6 @@ EXPONENT        (e|E)[+-]?{DIGIT}+
 
 INT_LIT     ({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})
 FLOAT_LIT   ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?|{DECIMAL_LIT}{EXPONENT}
-
-LETTER      [a-zA-Z]
-ID_START    ({LETTER}|_)
-ID_CHAR     ({LETTER}|{DIGIT}|_)
-TAG_CHAR    [A-Za-z_-]
 
 ESC_OCTAL   \\[0-7]{3}
 ESC_HEX     \\x{HEX_DIGIT}{2}
@@ -110,8 +106,8 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 <RAW_STRING><<EOF>>              { printf("ERROR: unclosed raw string\n"); return 1; }
 <RAW_STRING>`                    { printf("RAW_STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
-"true"                           { printf("TRUE: true\n"); }
-"false"                          { printf("FALSE: false\n"); }
+"true"                           { printf("TRUE: %d\n", 1); }
+"false"                          { printf("FALSE: %d\n", 0); }
 "asm"                            { printf("ASM: asm\n"); }
 "auto_cast"                      { printf("AUTO_CAST: auto_cast\n"); }
 "bit_field"                      { printf("BIT_FIELD: bit_field\n"); }
@@ -267,15 +263,16 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "rawptr"        { printf("RAWPTR: rawptr\n"); }
 "any"           { printf("ANY: any\n"); }
 
-"@"{ID_START}{ID_CHAR}*          { printf("ATTRIBUTE: %s\n", yytext); }
-"@"                              { printf("AT: %s\n", yytext); }
+"@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("ATTRIBUTE: %s\n", yytext); }
+"@"                                   { printf("AT: %s\n", yytext); }
 
-"#+"{ID_START}{TAG_CHAR}*        { printf("BUILD_DIRECTIVE: %s\n", yytext); }
-"#"{ID_START}{ID_CHAR}*          { printf("DIRECTIVE: %s\n", yytext); }
+"#+"({LETTER}|_)[A-Za-z_-]*           { printf("BUILD_DIRECTIVE: %s\n", yytext); }
+"#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("DIRECTIVE: %s\n", yytext); }
 
-{ID_START}{ID_CHAR}*             { printf("IDENTIFIER: %s\n", yytext); }
-[ \t\r\n]+                       { /* пропускаем пробелы */ }
 
+({LETTER}|_)({LETTER}|{DIGIT}|_)*   { printf("IDENTIFIER: %s\n", yytext); }
+[ \t\r\n]+                          { /* пропускаем пробелы */ }
+.                                   { printf("ERROR: unknown symbol: %s\n", yytext); }
 <*>.       { printf("ERROR: unknown symbol: %s\n", yytext); }
 
 %%
