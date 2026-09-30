@@ -31,8 +31,7 @@ EX_DECIMAL_LIT  0d{DIGIT}(_?{DIGIT})*
 EXPONENT        (e|E)[+-]?{DIGIT}+
 
 INT_LIT     ({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})
-FLOAT_LIT   ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?|{DECIMAL_LIT}{EXPONENT}
-
+FLOAT_LIT   ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}{EXPONENT}
 ESC_OCTAL   \\[0-7]{3}
 ESC_HEX     \\x{HEX_DIGIT}{2}
 ESC_UNICODE \\u{HEX_DIGIT}{4}
@@ -150,7 +149,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 "nil"                            { printf("NIL_LIT: %s\n",yytext); }
 "---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
-"{}"                             { printf("ZERO_COMPOUND_LIT: %s\n",yytext); }
 "?"                              { printf("QUESTION: %s\n", yytext); }
 
 
@@ -162,7 +160,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
 
 ({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
-({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
+{FLOAT_LIT}      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
 ({INT_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
 
 "+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
@@ -272,8 +270,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { printf("IDENTIFIER: %s\n", yytext); }
 [ \t\r\n]+                          { /* пропускаем пробелы */ }
-.                                   { printf("ERROR: unknown symbol: %s\n", yytext); }
-<*>.       { printf("ERROR: unknown symbol: %s\n", yytext); }
+<*>.                                { printf("ERROR: unknown symbol: %s\n", yytext); }
 
 %%
 

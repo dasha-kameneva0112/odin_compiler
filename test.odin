@@ -14,6 +14,13 @@ main :: proc() {
     unicode_test := "Letter: \u0041"
     unicode32_test := "Symbol: \U00000041"
 
+ a := 2e4      // FLOAT_LIT: 20000
+b := 2E-3     // FLOAT_LIT: 0.002
+c := 1_0e2    // FLOAT_LIT: 1000
+e := 2e4i     // IMAGINARY_LIT: 20000i
+f := 1.5      // FLOAT_LIT: 1.5
+g := .5       // FLOAT_LIT: 0.5
+h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
     letter := 'A'
     newline := '\n'
     tab := '\t'
