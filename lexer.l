@@ -16,46 +16,8 @@ char string[20480];
 char charbuf[32];
 char *buf; 
 
-char *strip_us(const char *src, char *dest)
-{
-    int j = 0;
-
-    for (int i = 0; src[i] != '\0'; i++)
-    {
-        if (src[i] != '_')
-        {
-            dest[j++] = src[i];
-        }
-    }
-    dest[j] = '\0';
-    return dest;
-}
-
-void append_utf8(char *dest, unsigned int codepoint) {
-    char utf8[5] = {0};
-    int n = 0;
-    if (codepoint <= 0x7F) {
-        utf8[0] = (char)codepoint; n = 1;
-    } else if (codepoint <= 0x7FF) {
-        utf8[0] = (char)(0xC0 | (codepoint >> 6));
-        utf8[1] = (char)(0x80 | (codepoint & 0x3F));
-        n = 2;
-    } else if (codepoint <= 0xFFFF) {
-        utf8[0] = (char)(0xE0 | (codepoint >> 12));
-        utf8[1] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
-        utf8[2] = (char)(0x80 | (codepoint & 0x3F));
-        n = 3;
-    } else {
-        utf8[0] = (char)(0xF0 | (codepoint >> 18));
-        utf8[1] = (char)(0x80 | ((codepoint >> 12) & 0x3F));
-        utf8[2] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
-        utf8[3] = (char)(0x80 | (codepoint & 0x3F));
-        n = 4;
-    }
-    utf8[n] = '\0';
-    strcat(dest, utf8);
-}
-
+char *strip_us(const char *src, char *dest);
+void append_utf8(char *dest, unsigned int codepoint);
 %}
 
 DIGIT       [0-9]
@@ -301,6 +263,47 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 .       { printf("ERROR: unknown symbol: %s\n", yytext); }
 
 %%
+
+char *strip_us(const char *src, char *dest)
+{
+    int j = 0;
+
+    for (int i = 0; src[i] != '\0'; i++)
+    {
+        if (src[i] != '_')
+        {
+            dest[j++] = src[i];
+        }
+    }
+    dest[j] = '\0';
+    return dest;
+}
+
+void append_utf8(char *dest, unsigned int codepoint) {
+    char utf8[5] = {0};
+    int n = 0;
+    if (codepoint <= 0x7F) {
+        utf8[0] = (char)codepoint; n = 1;
+    } else if (codepoint <= 0x7FF) {
+        utf8[0] = (char)(0xC0 | (codepoint >> 6));
+        utf8[1] = (char)(0x80 | (codepoint & 0x3F));
+        n = 2;
+    } else if (codepoint <= 0xFFFF) {
+        utf8[0] = (char)(0xE0 | (codepoint >> 12));
+        utf8[1] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
+        utf8[2] = (char)(0x80 | (codepoint & 0x3F));
+        n = 3;
+    } else {
+        utf8[0] = (char)(0xF0 | (codepoint >> 18));
+        utf8[1] = (char)(0x80 | ((codepoint >> 12) & 0x3F));
+        utf8[2] = (char)(0x80 | ((codepoint >> 6) & 0x3F));
+        utf8[3] = (char)(0x80 | (codepoint & 0x3F));
+        n = 4;
+    }
+    utf8[n] = '\0';
+    strcat(dest, utf8);
+}
+
 
 int main(int argc, char **argv)
 {
