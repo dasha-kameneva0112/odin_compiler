@@ -2,6 +2,10 @@ package main
 
 import "core:fmt"
 
+MyStruct :: struct {
+    value: int,
+}
+
 main :: proc() {
 
     // Однострочный комментарий
@@ -14,13 +18,13 @@ main :: proc() {
     unicode_test := "Letter: \u0041"
     unicode32_test := "Symbol: \U00000041"
 
- a := 2e4      // FLOAT_LIT: 20000
-b := 2E-3     // FLOAT_LIT: 0.002
-c := 1_0e2    // FLOAT_LIT: 1000
-e := 2e4i     // IMAGINARY_LIT: 20000i
-f := 1.5      // FLOAT_LIT: 1.5
-g := .5       // FLOAT_LIT: 0.5
-h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
+    a := 2e4      // FLOAT_LIT: 20000
+    b := 2E-3     // FLOAT_LIT: 0.002
+    c := 1_0e2    // FLOAT_LIT: 1000
+    e := 2e4i     // IMAGINARY_LIT: 20000i
+    f := 1.5      // FLOAT_LIT: 1.5
+    g := .5       // FLOAT_LIT: 0.5
+    h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
     letter := 'A'
     newline := '\n'
     tab := '\t'
@@ -43,8 +47,8 @@ h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
     тоже должен исчезнуть целиком */
     y := 2
 
-    x := 123
-    y := 0b1010       
+    x2 := 123
+    y2 := 0b1010       
     z := 0o755        
     hex_val := 0x1F_FF 
     doz_val := 0z15_8 
@@ -55,22 +59,16 @@ h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
     i1 := 1.
     pi2 := 3.14_159
     imag_num := 123i   
-    
-    // --- Добавленные примеры мнимых чисел с разными суффиксами и основаниями ---
-    imag_hex := 0xFFi
-    imag_bin := 0b1010j
-    imag_oct := 0o75_5k
-    imag_float := 3.14if
-    imag_doz := 0z15i
 
-    name := "Odin Language" 
-    name2 := nil 
+    name1 := "Odin Language" 
+    // name2 := nil 
     bool_name := true
 
     fmt.println("--- Literal Demonstration ---")
     fmt.printfln("x: %d, y: %d, z: %d, hex: %d", x, y, z, hex_val)
     fmt.printfln("Float: %f, Imaginary: %v, String: %s", pi, imag_num, name)
 
+    ptr: ^int = nil
     if ptr == nil {
         fmt.println("nil")
     }
@@ -79,12 +77,12 @@ h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
     auto_array := [?]int{10, 20, 30, 40}
 
     numbers := [10]int{3, 5, 8, 14, 22, 35, 40, 49, 50, 70}
-    var found int = -1 
+    found: int = -1
 
-    for n in numbers {
+    /* for n in numbers {
         break where n % 7 == 0
         found = n
-    }
+    } */
 
     if found != -1 {
         fmt.println("Found a number divisible by 7:", found)
@@ -92,6 +90,7 @@ h := 1..5     // DECIMAL_LIT, OP_RANGE, DECIMAL_LIT
         fmt.println("Not found")
     }
 
+    n := 10
     for i in 0..<10 {}
     for i in 1..=5 {}
     for i in 0..<n {}
