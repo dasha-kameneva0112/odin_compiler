@@ -11,11 +11,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-int comment_depth = 0;
-char string[20480];
-char charbuf[32];
-char *buf; 
-
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 %}
@@ -47,7 +42,15 @@ ESC_HEX     \\x{HEX_DIGIT}{2}
 ESC_UNICODE \\u{HEX_DIGIT}{4}
 ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
+
 %%
+%{
+    int comment_depth = 0;
+    char string[20480];
+    char charbuf[32];
+    char *buf = string;
+%}
+
 "//"[^\n]*                       {  }
 
 "/*"                             { comment_depth = 1; BEGIN(COMMENT); }
@@ -60,7 +63,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 \"                               { buf = string; BEGIN(STRING); string[0]='\0'; }
 <STRING>[^\\\"\n]+               { strcat(string, yytext); }
 <STRING>\\\n                     { /* продолжение строки на следующей строке */ }
-<STRING>\n                       { printf("Error: end of line in string"); BEGIN(INITIAL); return 1; }
+<STRING>\n                       { printf("Error: end of line in string \n"); BEGIN(INITIAL); return 1; }
 <STRING><<EOF>>                  { printf("Error: unclosed string\n"); return 1; }
 <STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
