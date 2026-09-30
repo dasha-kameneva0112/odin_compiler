@@ -46,19 +46,20 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 %%
 %{
     int comment_depth = 0;
+    char comment[20480];
     char string[20480];
     char charbuf[32];
     char *buf = string;
 %}
 
-"//"[^\n]*                       {  }
+"//"[^\n]*                       { printf("ONE_LINE_COMMENT: %s\n", yytext); }
 
-"/*"                             { comment_depth = 1; BEGIN(COMMENT); }
-<COMMENT>"/*"                    { comment_depth++; }
-<COMMENT>\n                      {  }
-<COMMENT>.                       {  }
+"/*"                             { comment_depth = 1; comment[0] = '\0'; strcat(comment, yytext); BEGIN(COMMENT); }
+<COMMENT>"/*"                    { comment_depth++; strcat(comment, yytext); }
+<COMMENT>\n                      { strcat(comment, yytext); }
+<COMMENT>.                       { strcat(comment, yytext); }
 <COMMENT><<EOF>>                 { printf("ERROR: unclosed comment\n"); return 1; }
-<COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) BEGIN(INITIAL); }
+<COMMENT>"*/"                    { strcat(comment, yytext); comment_depth--; if (comment_depth == 0) { printf("COMMENT: %s\n", comment); BEGIN(INITIAL); } }
 
 \"                               { buf = string; BEGIN(STRING); string[0]='\0'; }
 <STRING>[^\\\"\n]+               { strcat(string, yytext); }
