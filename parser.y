@@ -108,10 +108,10 @@ id_list:
 	   | id_list ',' ID 
 	   ;
 
-return_type: 
-		   /* empty */
-		   | OP_ARROW type_expr
-		   ;
+return_type: /* empty */
+           | OP_ARROW type_expr
+           | OP_ARROW '(' type_list ')'
+           ;
 
 
 /* ---- Переменная ----
@@ -135,14 +135,6 @@ const_decl:
 /* ---- Объявление типа ----
    MyInt  :: int
    Point  :: struct { x, y: int }   */
-type_decl:
-		 ID OP_DECL_TYPED type_expr
-		 | ID OP_DECL_TYPED struct_decl
-		 ;
-
-struct_decl: 
-		   STRUCT '{' field_list '}'
-		   ;
 
 field_list:
 		  /* empty */
@@ -167,22 +159,31 @@ foreign_decl:
    [dynamic]T / map[K]V / proc(...)->T 
    кортеж  (int, string) / анонимный struct/enum/union
    bit_set[T] / distinct T / matrix[R,C]T */
-type_expr:
-         base_type
-         | ID
-         | '^' type_expr
-         | '[' ']' type_expr
-         | '[' expr ']' type_expr
-         | '[' DYNAMIC ']' type_expr
-         | MAP '[' type_expr ']' type_expr
-         | PROC '(' param_list ')' return_type
-         | '(' type_list ')'
-         | STRUCT '{' field_list '}' 
-         | ENUM '{' enum_body '}'
-         | UNION '{' field_list '}'
-         | BIT_SET '{' type_expr '}' 
-         | DISTINCT type_expr             
-         | MATRIX '[' expr ',' expr ']' type_expr
+
+type_expr
+    : ID
+    | type_core
+    ;
+
+type_core
+    : base_type
+    | '^' type_expr
+    | '[' ']' type_expr
+    | '[' expr ']' type_expr
+    | '[' DYNAMIC ']' type_expr
+    | MAP '[' type_expr ']' type_expr
+    | PROC '(' param_list ')' return_type
+    | STRUCT '{' field_list '}'
+    | ENUM '{' enum_body '}'
+    | UNION '{' field_list '}'
+    | BIT_SET '[' type_expr ']'
+    | DISTINCT type_expr
+    | MATRIX '[' expr ',' expr ']' type_expr
+    ;
+
+type_decl
+    : ID OP_DECL_TYPED type_core
+    ;
          ;
 
 base_type:
