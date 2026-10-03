@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "parser.tab.h"
 
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
@@ -47,7 +48,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
     char *buf = string;
 %}
 
-"//"[^\n]*                       { printf("ONE_LINE_COMMENT: %s\n", yytext); }
+"//"[^\n]*                       { /* ничего не возвращаем */ }
 
 "/*"                             { comment_depth = 1; comment[0] = '\0'; strcat(comment, yytext); BEGIN(COMMENT); }
 <COMMENT>"/*"                    { comment_depth++; strcat(comment, yytext); }
@@ -101,55 +102,55 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 
 `                                { BEGIN(RAW_STRING); string[0] = '\0'; }
-<RAW_STRING>[^`]+              { strcat(string, yytext); }
+<RAW_STRING>[^`]+                { strcat(string, yytext); }
 <RAW_STRING><<EOF>>              { printf("ERROR: unclosed raw string\n"); return 1; }
 <RAW_STRING>`                    { printf("RAW_STRING_LIT: %s\n", string); BEGIN(INITIAL); }
 
-"true"                           { printf("TRUE: %d\n", 1); }
-"false"                          { printf("FALSE: %d\n", 0); }
-"asm"                            { printf("ASM: asm\n"); }
-"auto_cast"                      { printf("AUTO_CAST: auto_cast\n"); }
-"bit_field"                      { printf("BIT_FIELD: bit_field\n"); }
-"bit_set"                        { printf("BIT_SET: bit_set\n"); }
-"break"                          { printf("BREAK: break\n"); }
-"case"                           { printf("CASE: case\n"); }
-"cast"                           { printf("CAST: cast\n"); }
-"context"                        { printf("CONTEXT: context\n"); }
-"continue"                       { printf("CONTINUE: continue\n"); }
-"defer"                          { printf("DEFER: defer\n"); }
-"distinct"                       { printf("DISTINCT: distinct\n"); }
-"do"                             { printf("DO: do\n"); }
-"dynamic"                        { printf("DYNAMIC: dynamic\n"); }
-"else"                           { printf("ELSE: else\n"); }
-"enum"                           { printf("ENUM: enum\n"); }
-"fallthrough"                    { printf("FALLTHROUGH: fallthrough\n"); }
-"for"                            { printf("FOR: for\n"); }
-"foreign"                        { printf("FOREIGN: foreign\n"); }
-"if"                             { printf("IF: if\n"); }
-"import"                         { printf("IMPORT: import\n"); }
-"in"                             { printf("IN: in\n"); }
-"map"                            { printf("MAP: map\n"); }
-"matrix"                         { printf("MATRIX: matrix\n"); }
-"not_in"                         { printf("NOT_IN: not_in\n"); }
-"or_break"                       { printf("OR_BREAK: or_break\n"); }
-"or_continue"                    { printf("OR_CONTINUE: or_continue\n"); }
-"or_else"                        { printf("OR_ELSE: or_else\n"); }
-"or_return"                      { printf("OR_RETURN: or_return\n"); }
-"package"                        { printf("PACKAGE: package\n"); }
-"proc"                           { printf("PROC: proc\n"); }
-"return"                         { printf("RETURN: return\n"); }
-"struct"                         { printf("STRUCT: struct\n"); }
-"switch"                         { printf("SWITCH: switch\n"); }
-"transmute"                      { printf("TRANSMUTE: transmute\n"); }
-"typeid"                         { printf("TYPEID: typeid\n"); }
-"union"                          { printf("UNION: union\n"); }
-"using"                          { printf("USING: using\n"); }
-"when"                           { printf("WHEN: when\n"); }
-"where"                          { printf("WHERE: where\n"); }
+"true"                    { return TRUE; }
+"false"                   { return FALSE; }
+"asm"                     { return ASM; }
+"auto_cast"               { return AUTO_CAST; }
+"bit_field"               { return BIT_FIELD; }
+"bit_set"                 { return BIT_SET; }
+"break"                   { return BREAK; }
+"case"                    { return CASE; }
+"cast"                    { return CAST; }
+"context"                 { return CONTEXT; }
+"continue"                { return CONTINUE; }
+"defer"                   { return DEFER; }
+"distinct"                { return DISTINCT; }
+"do"                      { return DO; }
+"dynamic"                 { return DYNAMIC; }
+"else"                    { return ELSE; }
+"enum"                    { return ENUM; }
+"fallthrough"             { return FALLTHROUGH; }
+"for"                     { return FOR; }
+"foreign"                 { return FOREIGN; }
+"if"                      { return IF; }
+"import"                  { return IMPORT; }
+"in"                      { return IN; }
+"map"                     { return MAP; }
+"matrix"                  { return MATRIX; }
+"not_in"                  { return NOT_IN; }
+"or_break"                { return OR_BREAK; }
+"or_continue"             { return OR_CONTINUE; }
+"or_else"                 { return OR_ELSE; }
+"or_return"               { return OR_RETURN; }
+"package"                 { return PACKAGE; }
+"proc"                    { return PROC; }
+"return"                  { return RETURN; }
+"struct"                  { return STRUCT; }
+"switch"                  { return SWITCH; }
+"transmute"               { return TRANSMUTE; }
+"typeid"                  { return TYPEID; }
+"union"                   { return UNION; }
+"using"                   { return USING; }
+"when"                    { return WHEN; }
+"where"                   { return WHERE; }
 
-"nil"                            { printf("NIL_LIT: %s\n",yytext); }
-"---"                            { printf("UNDEFINED_LIT: %s\n",yytext); }
-"?"                              { printf("QUESTION: %s\n", yytext); }
+"nil"                     { return NIL; }
+"---"                     { return UNDEFINED; }
+"?"                       { return QUESTION; }
 
 
 0|[1-9](_?{DIGIT})*              { char c[128]; printf("DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
@@ -160,9 +161,18 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
 
 ({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
+0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
+0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
+0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
+0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
+0d{DIGIT}(_?{DIGIT})*            { yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
+0|[1-9](_?{DIGIT})*              { yylval.int_val = strtoll(c,   NULL, 10); return INT_LIT; }
+
 {FLOAT_LIT}      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
 ({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
 
+"&&="   { printf("OP_LOG_AND_ASSIGN: %s\n", yytext); }
+"||="   { printf("OP_LOG_OR_ASSIGN: %s\n", yytext); }
 "+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
 "-="    { printf("OP_SUB_ASSIGN: %s\n", yytext); }
 "*="    { printf("OP_MUL_ASSIGN: %s\n", yytext); }
@@ -175,8 +185,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "&~="   { printf("OP_AND_NOT_ASSIGN: %s\n", yytext); }
 "<<="   { printf("OP_SHL_ASSIGN: %s\n", yytext); }
 ">>="   { printf("OP_SHR_ASSIGN: %s\n", yytext); }
-"&&="   { printf("OP_LOG_AND_ASSIGN: %s\n", yytext); }
-"||="   { printf("OP_LOG_OR_ASSIGN: %s\n", yytext); }
 
 "="     { printf("OP_ASSIGN: %s\n", yytext); }
 "$"     { printf("OP_DOLLAR: %s\n", yytext); }
@@ -200,12 +208,13 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "<"     { printf("OP_LT: %s\n", yytext); }
 ">"     { printf("OP_GT: %s\n", yytext); }
 
-"+"     { printf("OP_PLUS: %s\n", yytext); }
-"-"     { printf("OP_MINUS: %s\n", yytext); }
-"*"     { printf("OP_MUL: %s\n", yytext); }
-"/"     { printf("OP_DIV: %s\n", yytext); }
-"%"     { printf("OP_MOD: %s\n", yytext); }
 "%%"    { printf("OP_MOD2: %s\n", yytext); }
+
+"+"         { return '+'; }
+"-"         { return '-'; }
+"*"         { return '*'; }
+"/"         { return '/'; }
+"%"         { return '%'; }
 
 "..="   { printf("OP_RANGE_INCLUSIVE: %s\n", yytext); }
 "..<"   { printf("OP_RANGE_EXCLUSIVE: %s\n", yytext); }
@@ -225,50 +234,50 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "["     { printf("LBRACKET: %s\n", yytext); }
 "]"     { printf("RBRACKET: %s\n", yytext); }
 ","     { printf("COMMA: %s\n", yytext); }
-";"     { printf("SEMICOLON: %s\n", yytext); }
+";"         { return ';'; }
 
-"bool"          { printf("BOOL: bool\n"); }
-"b8"            { printf("B8: b8\n"); }
-"b16"           { printf("B16: b16\n"); }
-"b32"           { printf("B32: b32\n"); }
-"b64"           { printf("B64: b64\n"); }
-"int"           { printf("INT: int\n"); }
-"i8"            { printf("I8: i8\n"); }
-"i16"           { printf("I16: i16\n"); }
-"i32"           { printf("I32: i32\n"); }
-"i64"           { printf("I64: i64\n"); }
-"i128"          { printf("I128: i128\n"); }
-"uint"          { printf("UINT: uint\n"); }
-"u8"            { printf("U8: u8\n"); }
-"u16"           { printf("U16: u16\n"); }
-"u32"           { printf("U32: u32\n"); }
-"u64"           { printf("U64: u64\n"); }
-"u128"          { printf("U128: u128\n"); }
-"uintptr"       { printf("UINTPTR: uintptr\n"); }
-"f16"           { printf("F16: f16\n"); }
-"f32"           { printf("F32: f32\n"); }
-"f64"           { printf("F64: f64\n"); }
-"complex32"     { printf("COMPLEX32: complex32\n"); }
-"complex64"     { printf("COMPLEX64: complex64\n"); }
-"complex128"    { printf("COMPLEX128: complex128\n"); }
-"quaternion64"  { printf("QUATERNION64: quaternion64\n"); }
-"quaternion128" { printf("QUATERNION128: quaternion128\n"); }
-"quaternion256" { printf("QUATERNION256: quaternion256\n"); }
-"string"        { printf("STRING: string\n"); }
-"cstring"       { printf("CSTRING: cstring\n"); }
-"byte"          { printf("BYTE: byte\n"); }
-"rune"          { printf("RUNE: rune\n"); }
-"rawptr"        { printf("RAWPTR: rawptr\n"); }
-"any"           { printf("ANY: any\n"); }
+"bool"            { return BOOL; }
+"b8"              { return B8; }
+"b16"             { return B16; }
+"b32"             { return B32; }
+"b64"             { return B64; }
+"int"             { return INT; }
+"i8"              { return I8; }
+"i16"             { return I16; }
+"i32"             { return I32; }
+"i64"             { return I64; }
+"i128"            { return I128; }
+"uint"            { return UINT; }
+"u8"              { return U8; }
+"u16"             { return U16; }
+"u32"             { return U32; }
+"u64"             { return U64; }
+"u128"            { return U128; }
+"uintptr"         { return UINTPTR; }
+"f16"             { return F16; }
+"f32"             { return F32; }
+"f64"             { return F64; }
+"complex32"       { return COMPLEX32; }
+"complex64"       { return COMPLEX64; }
+"complex128"      { return COMPLEX128; }
+"quaternion64"    { return QUATERNION64; }
+"quaternion128"   { return QUATERNION128; }
+"quaternion256"   { return QUATERNION256; }
+"string"          { return STRING; }
+"cstring"         { return CSTRING; }
+"byte"            { return BYTE; }
+"rune"            { return RUNE; }
+"rawptr"          { return RAWPTR; }
+"any"             { return ANY; }
 
 "@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("ATTRIBUTE: %s\n", yytext); }
-"@"                                   { printf("AT: %s\n", yytext); }
+"@"                                   { return AT; }
 
 "#+"({LETTER}|_)[A-Za-z_-]*           { printf("BUILD_DIRECTIVE: %s\n", yytext); }
 "#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("DIRECTIVE: %s\n", yytext); }
 
 
-({LETTER}|_)({LETTER}|{DIGIT}|_)*   { printf("IDENTIFIER: %s\n", yytext); }
+({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return IDENT; }
 [ \t\r\n]+                          { /* пропускаем пробелы */ }
 <*>.                                { printf("ERROR: unknown symbol: %s\n", yytext); }
 
