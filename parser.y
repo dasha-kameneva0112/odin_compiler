@@ -51,7 +51,7 @@ void yyerror(const char *s);
 %left '+' '-' '|' '~'
 %left '*' '/' '%' OP_MOD2 '&' OP_AND_NOT OP_SHL OP_SHR
 %right UNARY
-%right '(' '[' '.' '^'
+%left '(' '[' '.' '^'
 
 %%
 program: 
@@ -89,15 +89,19 @@ decl:
    add  :: proc(a: int, b: int) -> int { }
    foo  :: proc { foo_int, foo_str }        */
 proc_decl:
-		 ID OP_DECL_TYPED PROC '(' param_list ')' return_type block
+		 ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
 		 | ID OP_DECL_TYPED PROC '{' id_list '}'
 		 ;
 
+param_list_opt:
+              /* empty */
+              | param_list
+              ;
+
 param_list:
-		  /* empty */
-		  | param
-		  | param_list ',' param
-		  ;
+          param
+          | param_list ',' param
+          ;
 
 param:
 	 id_list ':' type_expr
@@ -135,16 +139,48 @@ const_decl:
 /* ---- Объявление типа ----
    MyInt  :: int
    Point  :: struct { x, y: int }   */
+type_decl: 
+         ID OP_DECL_TYPED type_core
+         ;
+
+/* MyType / ^T / []T (срез) / [N]T (массив)
+   [dynamic]T / map[K]V / proc(...)->T 
+   кортеж  (int, string) / анонимный struct/enum/union
+   bit_set[T] / distinct T / matrix[R,C]T */
+type_core: 
+         base_type
+         | '^' type_expr
+         | '[' ']' type_expr
+         | '[' expr ']' type_expr
+         | '[' DYNAMIC ']' type_expr
+         | MAP '[' type_expr ']' type_expr
+         | PROC '(' param_list_opt ')' return_type
+         | STRUCT '{' field_list_opt '}'
+         | ENUM '{' enum_body '}'
+         | UNION '{' field_list_opt '}'
+         | BIT_SET '[' type_expr ']'
+         | DISTINCT type_expr
+         | MATRIX '[' expr ',' expr ']' type_expr
+         ;
+
+field_list_opt:
+              /* empty */
+              | field_list
+              ;
 
 field_list:
-		  /* empty */
-		  | field_decl
-		  | field_list ',' field_decl
-		  ;
+          field_decl
+          | field_list ',' field_decl
+          ;
 
 field_decl:
 		  id_list ':' type_expr
 		  ;
+
+type_expr: 
+         ID    
+         | type_core 
+         ;
 
 
 /* ---- Foreign ----
@@ -154,37 +190,6 @@ foreign_decl:
 		  	FOREIGN IMPORT ID STRING_LIT 
 			| FOREIGN block 
             ;
-
-/* MyType / ^T / []T (срез) / [N]T (массив)
-   [dynamic]T / map[K]V / proc(...)->T 
-   кортеж  (int, string) / анонимный struct/enum/union
-   bit_set[T] / distinct T / matrix[R,C]T */
-
-type_expr
-    : ID
-    | type_core
-    ;
-
-type_core
-    : base_type
-    | '^' type_expr
-    | '[' ']' type_expr
-    | '[' expr ']' type_expr
-    | '[' DYNAMIC ']' type_expr
-    | MAP '[' type_expr ']' type_expr
-    | PROC '(' param_list ')' return_type
-    | STRUCT '{' field_list '}'
-    | ENUM '{' enum_body '}'
-    | UNION '{' field_list '}'
-    | BIT_SET '[' type_expr ']'
-    | DISTINCT type_expr
-    | MATRIX '[' expr ',' expr ']' type_expr
-    ;
-
-type_decl
-    : ID OP_DECL_TYPED type_core
-    ;
-         ;
 
 base_type:
          BOOL

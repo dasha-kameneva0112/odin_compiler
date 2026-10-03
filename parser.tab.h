@@ -173,7 +173,8 @@ extern int yydebug;
     OP_DECL_INFERRED = 374,        /* OP_DECL_INFERRED  */
     OP_MOD2 = 375,                 /* OP_MOD2  */
     OP_DOLLAR = 376,               /* OP_DOLLAR  */
-    LEX_ERROR = 377                /* LEX_ERROR  */
+    LEX_ERROR = 377,               /* LEX_ERROR  */
+    UNARY = 378                    /* UNARY  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -189,7 +190,7 @@ union YYSTYPE
     char        *str_val;
     unsigned int rune_val;
 
-#line 193 "parser.tab.h"
+#line 194 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
