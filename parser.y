@@ -60,6 +60,7 @@ program:
 
 package_clause: 
 			  PACKAGE ID 
+              ;
 
 import_list:
 		   /* empty */
@@ -88,7 +89,7 @@ decl:
    add  :: proc(a: int, b: int) -> int { }
    foo  :: proc { foo_int, foo_str }        */
 proc_decl:
-		 ID OP_DECL_TYPED '(' param_list ')' return_type block
+		 ID OP_DECL_TYPED PROC '(' param_list ')' return_type block
 		 | ID OP_DECL_TYPED PROC '{' id_list '}'
 		 ;
 
@@ -160,6 +161,95 @@ field_decl:
 foreign_decl:
 		  	FOREIGN IMPORT ID STRING_LIT 
 			| FOREIGN block 
+            ;
+
+/* MyType / ^T / []T (срез) / [N]T (массив)
+   [dynamic]T / map[K]V / proc(...)->T 
+   кортеж  (int, string) / анонимный struct/enum/union
+   bit_set[T] / distinct T / matrix[R,C]T 
+type_expr:
+         base_type
+         | ID
+         | '^' type_expr
+         | '[' ']' type_expr
+         | '[' expr ']' type_expr
+         | '[' DYNAMIC ']' type_expr
+         | MAP '[' type_expr ']' type_expr
+         | PROC '(' param_list ')' return_type
+         | '(' type_list ')'
+         | STRUCT '{' field_list '}' 
+         | ENUM '{' enum_body '}'
+         | UNION '{' field_list '}'
+         | BIT_SET '{' type_expr '}' 
+         | DISTINCT type_expr             
+         | MATRIX '[' expr ',' expr ']' type_expr
+         ;
+
+base_type:
+         BOOL
+         | B8  
+         | B16 
+         | B32 
+         | B64    
+         | INT 
+         | I8  
+         | I16 
+         | I32 
+         | I64 
+         | I128    
+         | UINT 
+         | U8 
+         | U16 
+         | U32 
+         | U64 
+         | U128    
+         | UINTPTR    
+         | F16 
+         | F32 
+         | F64
+         | COMPLEX32 
+         | COMPLEX64 
+         | COMPLEX128
+         | QUATERNION64 
+         | QUATERNION128 
+         | QUATERNION256
+         | STRING 
+         | CSTRING 
+         | BYTE 
+         | RUNE 
+         | RAWPTR 
+         | ANY
+         ;
+
+type_list:
+         type_expr
+         | type_list ',' type_expr
+         ;
+
+enum_body:
+         /* empty */
+         | enum_item
+         | enum_body ',' enum_item
+         ;
+
+enum_item:
+         ID
+         | ID '=' expr
+         ;
+
+block:
+     '{' stmt_list '}'
+     ;
+
+stmt_list:
+         /* empty */
+         | stmt_list stmt
+         ;
+
+/* ЗАГЛУШКА */
+stmt:
+    ';'
+    ;
 
 expr: ID
     | INT_LIT
