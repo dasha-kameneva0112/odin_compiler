@@ -270,6 +270,7 @@ expr: ID
     | '!' expr %prec UNARY
     | '~' expr %prec UNARY
     | '&' expr %prec UNARY
+    | AUTO_CAST expr %prec UNARY
 
 	/* ---- binary ---- */
     | expr OP_LOG_OR expr
