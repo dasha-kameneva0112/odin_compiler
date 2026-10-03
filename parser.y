@@ -95,10 +95,21 @@ expr: ID
     | expr OP_AND_NOT expr
     | expr OP_SHL expr
     | expr OP_SHR expr
+    
+    | expr '(' arg_list_op ')'
+    | expr '[' expr ']'
+    | expr '.' expr
+    | expr '^'
     ;
 
+arg_list_op: /* empty */
+    | expr
+    | arg_list ',' expr
+    ;
 
-
+arg_list: expr
+    | arg_list ',' expr
+    ;
 %%
 
 void yyerror(const char *s) {
