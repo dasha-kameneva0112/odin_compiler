@@ -152,7 +152,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "---"                     { return UNDEFINED; }
 "?"                       { return QUESTION; }
 
-
 0|[1-9](_?{DIGIT})*              { char c[128]; printf("DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; printf("BINARY_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 2)); }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; printf("OCTAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 8)); }
@@ -186,7 +185,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "<<="   { printf("OP_SHL_ASSIGN: %s\n", yytext); }
 ">>="   { printf("OP_SHR_ASSIGN: %s\n", yytext); }
 
-"="     { printf("OP_ASSIGN: %s\n", yytext); }
+"="         { return '='; }
 "$"     { printf("OP_DOLLAR: %s\n", yytext); }
 
 "&&"    { printf("OP_LOG_AND: %s\n", yytext); }
@@ -277,7 +276,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("DIRECTIVE: %s\n", yytext); }
 
 
-({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return IDENT; }
+({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
 [ \t\r\n]+                          { /* пропускаем пробелы */ }
 <*>.                                { printf("ERROR: unknown symbol: %s\n", yytext); }
 
