@@ -54,7 +54,112 @@ void yyerror(const char *s);
 %right '(' '[' '.' '^'
 
 %%
-program : expr ;
+program: 
+	   package_clause import_list decl_list 
+	   ;
+
+package_clause: 
+			  PACKAGE ID 
+
+import_list:
+		   /* empty */
+		   | import_list import_decl
+		   ;
+
+import_decl:
+		   IMPORT STRING_LIT
+		   ;
+
+decl_list:
+		 /* empty */
+		 | decl_list decl
+		 ;
+
+decl: 
+	proc_decl
+	| var_decl
+	| const_decl
+	| type_decl
+	| foreign_decl
+	;
+
+/* ---- Процедура ----
+   main :: proc() { }
+   add  :: proc(a: int, b: int) -> int { }
+   foo  :: proc { foo_int, foo_str }        */
+proc_decl:
+		 ID OP_DECL_TYPED '(' param_list ')' return_type block
+		 | ID OP_DECL_TYPED PROC '{' id_list '}'
+		 ;
+
+param_list:
+		  /* empty */
+		  | param
+		  | param_list ',' param
+		  ;
+
+param:
+	 id_list ':' type_expr
+	 ;
+
+id_list: 
+	   ID
+	   | id_list ',' ID 
+	   ;
+
+return_type: 
+		   /* empty */
+		   | OP_ARROW type_expr
+		   ;
+
+
+/* ---- Переменная ----
+   x: int = 5
+   x: int
+   x := 5    */
+var_decl:
+		ID ':' type_expr '=' expr 
+		| ID ':' type_expr
+		| ID OP_DECL_INFERRED expr
+		;
+
+
+/* ---- Константа ----   
+    	MAX :: 100  */
+const_decl:
+		  ID OP_DECL_TYPED expr 
+		  ;
+
+
+/* ---- Объявление типа ----
+   MyInt  :: int
+   Point  :: struct { x, y: int }   */
+type_decl:
+		 ID OP_DECL_TYPED type_expr
+		 | ID OP_DECL_TYPED struct_decl
+		 ;
+
+struct_decl: 
+		   STRUCT '{' field_list '}'
+		   ;
+
+field_list:
+		  /* empty */
+		  | field_decl
+		  | field_list ',' field_decl
+		  ;
+
+field_decl:
+		  id_list ':' type_expr
+		  ;
+
+
+/* ---- Foreign ----
+   foreign import foo "lib"
+   foreign { ... }            */
+foreign_decl:
+		  	FOREIGN IMPORT ID STRING_LIT 
+			| FOREIGN block 
 
 expr: ID
     | INT_LIT
@@ -96,8 +201,6 @@ expr: ID
     | expr OP_SHL expr
     | expr OP_SHR expr
     ;
-
-
 
 %%
 
