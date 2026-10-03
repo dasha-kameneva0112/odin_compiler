@@ -45,14 +45,59 @@ void yyerror(const char *s);
 
 %token LEX_ERROR
 
-%%
-program: 
-		stmt ';'
-	   ;
+%left OP_LOG_OR
+%left OP_LOG_AND
+%left OP_EQ OP_NE '<' '>' OP_LE OP_GE
+%left '+' '-' '|' '~'
+%left '*' '/' '%' OP_MOD2 '&' OP_AND_NOT OP_SHL OP_SHR
+%right UNARY
+%right '(' '[' '.' '^'
 
-stmt:
-	ID '=' INT_LIT ';'
-	;
+%%
+program : expr ;
+
+expr: ID
+    | INT_LIT
+    | FLOAT_LIT
+    | STRING_LIT
+    | RAW_STRING_LIT
+    | IMAGINARY_LIT
+    | RUNE_LIT
+    | NIL
+    | UNDEFINED
+    | TRUE
+    | FALSE
+    | '(' expr ')'
+
+    | '+' expr %prec UNARY
+    | '-' expr %prec UNARY
+    | '!' expr %prec UNARY
+    | '~' expr %prec UNARY
+    | '&' expr %prec UNARY
+
+    | expr OP_LOG_OR expr
+    | expr OP_LOG_AND expr
+    | expr OP_EQ expr
+    | expr OP_NE expr
+    | expr '<' expr
+    | expr '>' expr
+    | expr OP_LE expr
+    | expr OP_GE expr
+    | expr '+' expr
+    | expr '-' expr
+    | expr '|' expr
+    | expr '~' expr
+    | expr '*' expr
+    | expr '/' expr
+    | expr '%' expr
+    | expr OP_MOD2 expr
+    | expr '&' expr
+    | expr OP_AND_NOT expr
+    | expr OP_SHL expr
+    | expr OP_SHR expr
+    ;
+
+
 
 %%
 
