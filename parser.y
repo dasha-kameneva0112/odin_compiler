@@ -166,7 +166,7 @@ foreign_decl:
 /* MyType / ^T / []T (срез) / [N]T (массив)
    [dynamic]T / map[K]V / proc(...)->T 
    кортеж  (int, string) / анонимный struct/enum/union
-   bit_set[T] / distinct T / matrix[R,C]T 
+   bit_set[T] / distinct T / matrix[R,C]T */
 type_expr:
          base_type
          | ID
