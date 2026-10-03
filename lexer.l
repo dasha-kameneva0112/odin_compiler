@@ -152,88 +152,74 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "---"                     { return UNDEFINED; }
 "?"                       { return QUESTION; }
 
-0|[1-9](_?{DIGIT})*              { char c[128]; printf("DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
-0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; printf("BINARY_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 2)); }
-0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; printf("OCTAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 8)); }
-0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { char c[128]; printf("DOZENAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 12)); }
-0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; printf("HEX_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 16)); }
-0d{DIGIT}(_?{DIGIT})*            { char c[128]; printf("EX_DECIMAL_LIT: %ld\n", strtol(strip_us(yytext,c)+2, NULL, 10)); }
-
-({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})                { char c[128]; printf("INT_LIT: %ld\n", strtol(strip_us(yytext,c), NULL, 10)); }
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
 0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
 0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
 0d{DIGIT}(_?{DIGIT})*            { yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
-0|[1-9](_?{DIGIT})*              { yylval.int_val = strtoll(c,   NULL, 10); return INT_LIT; }
+0|[1-9](_?{DIGIT})*              { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
 
-{FLOAT_LIT}      { char c[128]; printf("FLOAT_LIT: %g\n", strtod(strip_us(yytext,c), NULL)); }
+{FLOAT_LIT}                        { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
 ({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
 
-"&&="   { printf("OP_LOG_AND_ASSIGN: %s\n", yytext); }
-"||="   { printf("OP_LOG_OR_ASSIGN: %s\n", yytext); }
-"+="    { printf("OP_ADD_ASSIGN: %s\n", yytext); }
-"-="    { printf("OP_SUB_ASSIGN: %s\n", yytext); }
-"*="    { printf("OP_MUL_ASSIGN: %s\n", yytext); }
-"/="    { printf("OP_DIV_ASSIGN: %s\n", yytext); }
-"%="    { printf("OP_MOD_ASSIGN: %s\n", yytext); }
-"%%="   { printf("OP_MOD2_ASSIGN: %s\n", yytext); }
-"|="    { printf("OP_OR_ASSIGN: %s\n", yytext); }
-"~="    { printf("OP_NOT_ASSIGN: %s\n", yytext); }
-"&="    { printf("OP_AND_ASSIGN: %s\n", yytext); }
-"&~="   { printf("OP_AND_NOT_ASSIGN: %s\n", yytext); }
-"<<="   { printf("OP_SHL_ASSIGN: %s\n", yytext); }
-">>="   { printf("OP_SHR_ASSIGN: %s\n", yytext); }
+"&&="       { return OP_LOG_AND_ASSIGN; }
+"||="       { return OP_LOG_OR_ASSIGN; }
+"<<="       { return OP_SHL_ASSIGN; }
+">>="       { return OP_SHR_ASSIGN; }
+"&~="       { return OP_AND_NOT_ASSIGN; }
+"+="        { return OP_ADD_ASSIGN; }
+"-="        { return OP_SUB_ASSIGN; }
+"*="        { return OP_MUL_ASSIGN; }
+"/="        { return OP_DIV_ASSIGN; }
+"%="        { return OP_MOD_ASSIGN; }
+"%%="       { return OP_MOD2_ASSIGN; }
+"|="        { return OP_OR_ASSIGN; }
+"~="        { return OP_NOT_ASSIGN; }
+"&="        { return OP_AND_ASSIGN; }
 
-"="         { return '='; }
-"$"     { printf("OP_DOLLAR: %s\n", yytext); }
+"..="       { return OP_RANGE_INCLUSIVE; }
+"..<"       { return OP_RANGE_EXCLUSIVE; }
+".."        { return OP_RANGE; }
+"->"        { return OP_ARROW; }
 
-"&&"    { printf("OP_LOG_AND: %s\n", yytext); }
-"||"    { printf("OP_LOG_OR: %s\n", yytext); }
-"!"     { printf("OP_NOT: %s\n", yytext); }
-
-"|"     { printf("OP_BIT_OR: %s\n", yytext); }
-"&~"    { printf("OP_AND_NOT: %s\n", yytext); }
-"~"     { printf("OP_BIT_NOT: %s\n", yytext); }
-"^"     { printf("OP_DEREF: %s\n", yytext); }
-"&"     { printf("OP_ADDRESS: %s\n", yytext); }
-"<<"    { printf("OP_SHL: %s\n", yytext); }
-">>"    { printf("OP_SHR: %s\n", yytext); }
-
-"=="    { printf("OP_EQ: %s\n", yytext); }
-"!="    { printf("OP_NE: %s\n", yytext); }
-"<="    { printf("OP_LE: %s\n", yytext); }
-">="    { printf("OP_GE: %s\n", yytext); }
-"<"     { printf("OP_LT: %s\n", yytext); }
-">"     { printf("OP_GT: %s\n", yytext); }
-
-"%%"    { printf("OP_MOD2: %s\n", yytext); }
+"&&"        { return OP_LOG_AND; }
+"||"        { return OP_LOG_OR; }
+"&~"        { return OP_AND_NOT; }
+"<<"        { return OP_SHL; }
+">>"        { return OP_SHR; }
+"=="        { return OP_EQ; }
+"!="        { return OP_NE; }
+"<="        { return OP_LE; }
+">="        { return OP_GE; }
+"%%"        { return OP_MOD2; }
 
 "+"         { return '+'; }
 "-"         { return '-'; }
 "*"         { return '*'; }
 "/"         { return '/'; }
 "%"         { return '%'; }
-
-"..="   { printf("OP_RANGE_INCLUSIVE: %s\n", yytext); }
-"..<"   { printf("OP_RANGE_EXCLUSIVE: %s\n", yytext); }
-".."    { printf("OP_RANGE: %s\n", yytext); }
-
-"."     { printf("OP_DOT: %s\n", yytext); }
-"->"    { printf("OP_ARROW: %s\n", yytext); }
-
-":"     { printf("COLON: %s\n", yytext); }
-"::"    { printf("OP_DECL_TYPED: %s\n", yytext); }
-":="    { printf("OP_DECL_INFERRED: %s\n", yytext); }
-
-"("     { printf("LPAREN: %s\n", yytext); }
-")"     { printf("RPAREN: %s\n", yytext); }
-"{"     { printf("LBRACE: %s\n", yytext); }
-"}"     { printf("RBRACE: %s\n", yytext); }
-"["     { printf("LBRACKET: %s\n", yytext); }
-"]"     { printf("RBRACKET: %s\n", yytext); }
-","     { printf("COMMA: %s\n", yytext); }
+"="         { return '='; }
+"!"         { return '!'; }
+"<"         { return '<'; }
+">"         { return '>'; }
+"&"         { return '&'; }
+"|"         { return '|'; }
+"^"         { return '^'; }
+"~"         { return '~'; }
+"("         { return '('; }
+")"         { return ')'; }
+"["         { return '['; }
+"]"         { return ']'; }
+"{"         { return '{'; }
+"}"         { return '}'; }
+","         { return ','; }
 ";"         { return ';'; }
+"."         { return '.'; }
+"$"         { return OP_DOLLAR; }
+
+":"         { return ':'; }
+"::"        { return OP_DECL_TYPED; }
+":="        { return OP_DECL_INFERRED; }
 
 "bool"            { return BOOL; }
 "b8"              { return B8; }
@@ -269,16 +255,15 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "rawptr"          { return RAWPTR; }
 "any"             { return ANY; }
 
-"@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("ATTRIBUTE: %s\n", yytext); }
+"@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return ATTRIBUTE; }
 "@"                                   { return AT; }
 
-"#+"({LETTER}|_)[A-Za-z_-]*           { printf("BUILD_DIRECTIVE: %s\n", yytext); }
-"#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { printf("DIRECTIVE: %s\n", yytext); }
-
+"#+"({LETTER}|_)[A-Za-z_-]*           { yylval.str_val = strdup(yytext); return BUILD_DIRECTIVE; }
+"#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return DIRECTIVE; }
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
 [ \t\r\n]+                          { /* пропускаем пробелы */ }
-<*>.                                { printf("ERROR: unknown symbol: %s\n", yytext); }
+<*>.                                { fprintf(stderr, "Lex error: unknown symbol '%s' at %d:%d\n", yytext, yylloc.first_line, yylloc.first_column); return LEX_ERROR; }
 
 %%
 
