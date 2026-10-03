@@ -174,12 +174,14 @@ expr: ID
     | FALSE
     | '(' expr ')'
 
+	/* ---- unary ---- */
     | '+' expr %prec UNARY
     | '-' expr %prec UNARY
     | '!' expr %prec UNARY
     | '~' expr %prec UNARY
     | '&' expr %prec UNARY
 
+	/* ---- binary ---- */
     | expr OP_LOG_OR expr
     | expr OP_LOG_AND expr
     | expr OP_EQ expr
@@ -203,13 +205,12 @@ expr: ID
     
     | expr '(' arg_list_op ')'
     | expr '[' expr ']'
-    | expr '.' expr
+    | expr '.' ID
     | expr '^'
     ;
 
 arg_list_op: /* empty */
-    | expr
-    | arg_list ',' expr
+    | arg_list 
     ;
 
 arg_list: expr
