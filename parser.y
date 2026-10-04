@@ -165,6 +165,7 @@ type_core:
          | '[' DYNAMIC ']' type_expr
          | MAP '[' type_expr ']' type_expr
          | PROC '(' param_list_opt ')' return_type
+         | '(' type_list ')'
          | STRUCT '{' field_list_opt '}'
          | ENUM '{' enum_body_opt '}'
          | UNION '{' field_list_opt '}'
@@ -252,7 +253,8 @@ enum_item:
          | ID '=' expr
          ;
 
-block: '{' stmt_list '}'
+block:
+     '{' stmt_list '}'
      ;
 
 stmt_list: /* empty */
@@ -264,28 +266,31 @@ stmt: /*  x = 5 / x := 5 / x: int = 5 / x: int  */
     | block
     | if_stmt
     | for_stmt 
+    | switch_stmt 
+    | when_stmt
     | return_stmt
     | defer_stmt
     | BREAK
     | CONTINUE
     | FALLTHROUGH
+    | DIRECTIVE stmt  
     ;
 
 simple_stmt:
-           ID '=' expr 
-           | ID OP_DECL_INFERRED expr 
-           | ID ':' type_expr '=' expr
-           | ID ':' type_expr 
+           expr '=' expr 
+           | expr OP_DECL_INFERRED expr 
+           | expr ':' type_expr '=' expr
+           | expr ':' type_expr 
 
-           | ID OP_ADD_ASSIGN expr
-           | ID OP_SUB_ASSIGN expr 
-           | ID OP_MUL_ASSIGN expr
-           | ID OP_DIV_ASSIGN expr
-           | ID OP_MOD_ASSIGN expr
-           | ID OP_AND_ASSIGN expr
-           | ID OP_OR_ASSIGN expr
-           | ID OP_SHL_ASSIGN expr
-           | ID OP_SHR_ASSIGN expr
+           | expr OP_ADD_ASSIGN expr
+           | expr OP_SUB_ASSIGN expr 
+           | expr OP_MUL_ASSIGN expr
+           | expr OP_DIV_ASSIGN expr
+           | expr OP_MOD_ASSIGN expr
+           | expr OP_AND_ASSIGN expr
+           | expr OP_OR_ASSIGN expr
+           | expr OP_SHL_ASSIGN expr
+           | expr OP_SHR_ASSIGN expr
            | expr
            ;
 
@@ -320,6 +325,46 @@ for_stmt:
         | FOR expr ',' expr IN expr DO simple_stmt
         | FOR simple_stmt ';' expr ';' simple_stmt DO simple_stmt
         ;
+
+/* switch x { case 1: foo() ... case: baz() }
+   switch { case x > 0: foo() ... case: baz() }
+   switch y := f(); y { case 1: ... } switch y := f(); { case y > 0: ... } */
+switch_stmt:
+           SWITCH switch_body
+           | SWITCH expr switch_body
+           | SWITCH simple_stmt ';' expr switch_body
+           | SWITCH simple_stmt ';' switch_body
+           ;
+
+switch_body:
+           '{' case_list '}'
+           ;
+
+case_list:
+         /* empty */
+         | case_list case_clause 
+         ;
+
+/* case 1: foo()
+   case 1, 2, 3: bar()
+   case 0..<10: baz()
+   case: qux()           */
+case_clause:
+           CASE expr_list ':' stmt_list
+           | CASE ':' stmt_list
+           ;
+
+expr_list:
+         expr
+         | expr_list ',' expr 
+         ;
+
+
+when_stmt:
+         WHEN expr block
+         | WHEN expr block ELSE when_stmt
+         | WHEN expr block ELSE block
+         ;
 
 
 /* return
