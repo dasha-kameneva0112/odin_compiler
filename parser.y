@@ -45,13 +45,16 @@ void yyerror(const char *s);
 
 %token LEX_ERROR
 
+%right QUESTION IF WHEN
+%left OR_ELSE
+%left OP_RANGE OP_RANGE_INCLUSIVE OP_RANGE_EXCLUSIVE
 %left OP_LOG_OR
 %left OP_LOG_AND
 %left OP_EQ OP_NE '<' '>' OP_LE OP_GE
 %left '+' '-' '|' '~'
 %left '*' '/' '%' OP_MOD2 '&' OP_AND_NOT OP_SHL OP_SHR
 %right UNARY
-%left '(' '[' '.' '^'
+%left '(' '[' '.' '^' OR_RETURN OR_BREAK OR_CONTINUE 
 
 %%
 program: 
@@ -305,18 +308,35 @@ expr: ID
     | expr OP_AND_NOT expr
     | expr OP_SHL expr
     | expr OP_SHR expr
-    
+
+    /* ---- or_else и диапазоны (.., ..=, ..<) ---- */
+    | expr OR_ELSE expr
+    | expr OP_RANGE expr
+    | expr OP_RANGE_INCLUSIVE expr
+    | expr OP_RANGE_EXCLUSIVE expr
+
+     /* ---- тернарные формы ---- */
+    |expr '?' expr ':' expr  %prec QUESTION
+    |expr WHEN expr ELSE expr %prec WHEN
+    |expr IF expr ELSE expr %prec IF
+
+    /* ---- постфиксные  ---- */
+    | expr '^'
+    | expr OR_RETURN
+    | expr OR_BREAK
+    /* | expr OR_BREAK ID */
+    | expr OR_CONTINUE
+    /* | expr OR_CONTINUE ID */
     | expr '(' arg_list_op ')'
     | expr '[' expr ']'
     | expr '.' ID
-    | expr '^'
          
     /* ---- приведения типа ---- 
     cast(i64) x */
-    |CAST '(' type_expr ')' expr % prec UNARY
+    |CAST '(' type_expr ')' expr %prec UNARY
     /* ---- приведения типа ---- 
     transmute(u32) 1.5 */
-    |TRANS_MUTE '(' type_expr ')' expr % prec UNARY
+    |TRANSMUTE '(' type_expr ')' expr %prec UNARY
     ;
 
 

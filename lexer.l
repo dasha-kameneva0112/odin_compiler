@@ -150,7 +150,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 "nil"                     { return NIL; }
 "---"                     { return UNDEFINED; }
-"?"                       { return QUESTION; }
+"?"                       { return '?'; }
 
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
