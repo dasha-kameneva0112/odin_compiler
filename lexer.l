@@ -1,10 +1,10 @@
 %option noyywrap
 %option never-interactive
 
-%x COMMENT
-%x STRING
-%x CHAR
-%x RAW_STRING
+%x ST_COMMENT
+%x ST_STRING
+%x ST_CHAR
+%x ST_RAW_STRING
 
 %{
 #include <stdio.h>
@@ -14,6 +14,18 @@
 
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
+unsigned int first_codepoint(const unsigned char *s);
+
+
+static int cur_line = 1, cur_col = 1;
+#define YY_USER_ACTION                                              \
+    yylloc.first_line = cur_line; yylloc.first_column = cur_col;    \
+    for (int i_ = 0; i_ < yyleng; i_++) {                           \
+        if (yytext[i_] == '\n') { cur_line++; cur_col = 1; }        \
+        else cur_col++;                                             \
+    }                                                               \
+    yylloc.last_line = cur_line; yylloc.last_column = cur_col;
+
 %}
 
 DIGIT       [0-9]
@@ -50,61 +62,56 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 "//"[^\n]*                       { /* ничего не возвращаем */ }
 
-"/*"                             { comment_depth = 1; comment[0] = '\0'; strcat(comment, yytext); BEGIN(COMMENT); }
-<COMMENT>"/*"                    { comment_depth++; strcat(comment, yytext); }
-<COMMENT>\n                      { strcat(comment, yytext); }
-<COMMENT>.                       { strcat(comment, yytext); }
-<COMMENT><<EOF>>                 { printf("ERROR: unclosed comment\n"); return 1; }
-<COMMENT>"*/"                    { strcat(comment, yytext); comment_depth--; if (comment_depth == 0) { printf("COMMENT: %s\n", comment); BEGIN(INITIAL); } }
+"/*"                             { comment_depth = 1; comment[0] = '\0'; strcat(comment, yytext); BEGIN(ST_COMMENT); }
+<ST_COMMENT>"/*"                    { comment_depth++; strcat(comment, yytext); }
+<ST_COMMENT>\n                      { strcat(comment, yytext); }
+<ST_COMMENT>.                       { strcat(comment, yytext); }
+<ST_COMMENT><<EOF>>                 { fprintf(stderr, "Lex error: unclosed comment\n");BEGIN(INITIAL); return LEX_ERROR; }
+<ST_COMMENT>"*/"                    { strcat(comment, yytext); comment_depth--; if (comment_depth == 0) { printf("COMMENT: %s\n", comment); BEGIN(INITIAL); } }
 
-\"                               { buf = string; BEGIN(STRING); string[0]='\0'; }
-<STRING>[^\\\"\n]+               { strcat(string, yytext); }
-<STRING>\\\n                     { /* продолжение строки на следующей строке */ }
-<STRING>\n                       { printf("Error: end of line in string \n"); BEGIN(INITIAL); return 1; }
-<STRING><<EOF>>                  { printf("Error: unclosed string\n"); return 1; }
-<STRING>\"                       { printf("STRING_LIT: %s\n", string); BEGIN(INITIAL); }
+\"                                  { buf = string; BEGIN(ST_STRING); string[0]='\0'; }
+<ST_STRING>[^\\\"\n]+               { strcat(string, yytext); }
+<ST_STRING>\\\n                     { /* продолжение строки на следующей строке */ }
+<ST_STRING>\n                       { fprintf(stderr, "Lex error: newline in string\n"); BEGIN(INITIAL); return LEX_ERROR; }
+<ST_STRING><<EOF>>                  { fprintf(stderr, "Lex error: unclosed string\n"); BEGIN(INITIAL); return LEX_ERROR; }
+<ST_STRING>\"                       { BEGIN(INITIAL); yylval.str_val = strdup(string); return STRING_LIT; }
 
-\'                               { buf = charbuf; BEGIN(CHAR); charbuf[0] = '\0'; }
-<CHAR>[^\\'\n]+                  { strcat(charbuf, yytext); }
-<CHAR>\n                         { printf("ERROR: end of line in rune literal\n"); return 1; }
-<CHAR><<EOF>>                    { printf("ERROR: unclosed rune literal\n"); return 1; }
-<CHAR>\'                         {
+\'                               { buf = charbuf; BEGIN(ST_CHAR); charbuf[0] = '\0'; }
+<ST_CHAR>[^\\'\n]+                  { strcat(charbuf, yytext); }
+<ST_CHAR>\n                         { fprintf(stderr, "Lex error: newline in rune literal\n"); BEGIN(INITIAL); return LEX_ERROR; }
+<ST_CHAR><<EOF>>                    { fprintf(stderr, "Lex error: unclosed rune literal\n"); BEGIN(INITIAL); return LEX_ERROR; }
+<ST_CHAR>\'                         {
                                     int count = 0;
                                     for (unsigned char *p = (unsigned char *)charbuf; *p; p++)
                                         if ((*p & 0xC0) != 0x80) count++;   /* считаем символы UTF-8, а не байты */
 
-                                    if (count == 1)
-                                        printf("RUNE_LIT: %s\n", charbuf);
-                                    else if (count == 0)
-                                        printf("ERROR: empty rune literal\n");
-                                    else
-                                        printf("ERROR: rune literal must contain exactly one character: '%s'\n", charbuf);
-
-                                    BEGIN(INITIAL);
-                                   }
+                                     BEGIN(INITIAL);
+                                    if (count == 1){
+                                       yylval.rune_val = first_codepoint((unsigned char *)charbuf); return RUNE_LIT; }
+                                       fprintf(stderr, "Lex error: rune literal must contain exactly one character\n"); return LEX_ERROR;}
 
 
-<STRING,CHAR>\\n                   { strcat(buf, "\n"); }
-<STRING,CHAR>\\a                   { strcat(buf, "\a"); }
-<STRING,CHAR>\\b                   { strcat(buf, "\b"); }
-<STRING,CHAR>\\e                   { strcat(buf, "\e"); }
-<STRING,CHAR>\\f                   { strcat(buf, "\f"); }
-<STRING,CHAR>\\r                   { strcat(buf, "\r"); }
-<STRING,CHAR>\\t                   { strcat(buf, "\t"); }
-<STRING,CHAR>\\v                   { strcat(buf, "\v"); }
-<STRING,CHAR>\\\\                  { strcat(buf, "\\"); }
-<STRING,CHAR>\\\"                  { strcat(buf, "\""); }
-<STRING,CHAR>\\'                   { strcat(buf, "'"); }
-<STRING,CHAR>{ESC_OCTAL}           { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(buf, code); }
-<STRING,CHAR>{ESC_HEX}             { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(buf, code); }
-<STRING,CHAR>{ESC_UNICODE}         { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
-<STRING,CHAR>{ESC_UNICODE32}       { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
+<ST_STRING,ST_CHAR>\\n                   { strcat(buf, "\n"); }
+<ST_STRING,ST_CHAR>\\a                   { strcat(buf, "\a"); }
+<ST_STRING,ST_CHAR>\\b                   { strcat(buf, "\b"); }
+<ST_STRING,ST_CHAR>\\e                   { strcat(buf, "\e"); }
+<ST_STRING,ST_CHAR>\\f                   { strcat(buf, "\f"); }
+<ST_STRING,ST_CHAR>\\r                   { strcat(buf, "\r"); }
+<ST_STRING,ST_CHAR>\\t                   { strcat(buf, "\t"); }
+<ST_STRING,ST_CHAR>\\v                   { strcat(buf, "\v"); }
+<ST_STRING,ST_CHAR>\\\\                  { strcat(buf, "\\"); }
+<ST_STRING,ST_CHAR>\\\"                  { strcat(buf, "\""); }
+<ST_STRING,ST_CHAR>\\'                   { strcat(buf, "'"); }
+<ST_STRING,ST_CHAR>{ESC_OCTAL}           { char code[2]={0}; code[0]=(char)strtol(yytext+1, NULL, 8); strcat(buf, code); }
+<ST_STRING,ST_CHAR>{ESC_HEX}             { char code[2] = {0}; code[0] = (char)strtol(yytext + 2, NULL, 16); strcat(buf, code); }
+<ST_STRING,ST_CHAR>{ESC_UNICODE}         { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
+<ST_STRING,ST_CHAR>{ESC_UNICODE32}       { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
 
 
-`                                { BEGIN(RAW_STRING); string[0] = '\0'; }
-<RAW_STRING>[^`]+                { strcat(string, yytext); }
-<RAW_STRING><<EOF>>              { printf("ERROR: unclosed raw string\n"); return 1; }
-<RAW_STRING>`                    { printf("RAW_STRING_LIT: %s\n", string); BEGIN(INITIAL); }
+`                                { BEGIN(ST_RAW_STRING); string[0] = '\0'; }
+<ST_RAW_STRING>[^`]+                { strcat(string, yytext); }
+<ST_RAW_STRING><<EOF>>              { fprintf(stderr, "Lex error: unclosed raw string\n");  BEGIN(INITIAL); return LEX_ERROR; }
+<ST_RAW_STRING>`                    { BEGIN(INITIAL); yylval.str_val = strdup(string); return RAW_STRING_LIT; }
 
 "true"                    { return TRUE; }
 "false"                   { return FALSE; }
@@ -152,15 +159,15 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "---"                     { return UNDEFINED; }
 "?"                       { return '?'; }
 
-0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
-0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
-0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
-0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
-0d{DIGIT}(_?{DIGIT})*            { yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
+0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
+0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
+0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
+0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
+0d{DIGIT}(_?{DIGIT})*            { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
 0|[1-9](_?{DIGIT})*              { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
 
 {FLOAT_LIT}                        { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
-({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); }
+({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); yylval.str_val = strdup(yytext); return IMAGINARY_LIT; }
 
 "&&="       { return OP_LOG_AND_ASSIGN; }
 "||="       { return OP_LOG_OR_ASSIGN; }
@@ -282,6 +289,16 @@ char *strip_us(const char *src, char *dest)
     return dest;
 }
 
+unsigned int first_codepoint(const unsigned char *s)
+{
+    if (s[0] < 0x80) return s[0];
+    if ((s[0] & 0xE0) == 0xC0) return ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+    if ((s[0] & 0xF0) == 0xE0)
+        return ((s[0] & 0x0F) << 12) | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);
+    return ((s[0] & 0x07) << 18) | ((s[1] & 0x3F) << 12)
+         | ((s[2] & 0x3F) << 6)  |  (s[3] & 0x3F);
+}
+
 void append_utf8(char *dest, unsigned int codepoint) {
     char utf8[5] = {0};
     int n = 0;
@@ -305,28 +322,4 @@ void append_utf8(char *dest, unsigned int codepoint) {
     }
     utf8[n] = '\0';
     strcat(dest, utf8);
-}
-
-
-int main(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        printf("Usage: lexer <input_file>\n");
-        return 1;
-    }
-
-    yyin = fopen(argv[1], "r");
-
-    if (yyin == NULL)
-    {
-        printf("Cannot open file: %s\n", argv[1]);
-        return 1;
-    }
-
-    yylex();
-
-    fclose(yyin);
-
-    return 0;
 }

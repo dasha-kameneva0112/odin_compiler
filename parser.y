@@ -13,6 +13,9 @@ void yyerror(const char *s);
     unsigned int rune_val;
 }
 
+%locations
+%define parse.error verbose
+
 %token TRUE FALSE ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
 %token CONTEXT CONTINUE DEFER DISTINCT DO DYNAMIC ELSE ENUM FALLTHROUGH
 %token FOR FOREIGN IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
@@ -468,11 +471,18 @@ arg_list: expr
 
 %%
 
+extern FILE *yyin;
+
 void yyerror(const char *s) {
-	fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "Syntax error at line %d: %s\n", yylloc.first_line, s);
 }
 
-int main(void) {
-	return yyparse();
+int main(int argc, char **argv) {
+    if (argc < 2) { fprintf(stderr, "Usage: %s <file>\n", argv[0]); return 1; }
+    yyin = fopen(argv[1], "r");
+    if (!yyin) { perror(argv[1]); return 1; }
+    int r = yyparse();
+    fclose(yyin);
+    if (r == 0) printf("OK\n");
+    return r;
 }
-
