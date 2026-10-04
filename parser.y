@@ -35,7 +35,7 @@ void yyerror(const char *s);
 %token NIL UNDEFINED
 
 %token <str_val> ATTRIBUTE BUILD_DIRECTIVE DIRECTIVE
-%token AT QUESTION
+%token AT 
 
 %token OP_ADD_ASSIGN OP_SUB_ASSIGN OP_MUL_ASSIGN OP_DIV_ASSIGN
 %token OP_MOD_ASSIGN OP_MOD2_ASSIGN OP_OR_ASSIGN OP_NOT_ASSIGN
@@ -48,7 +48,7 @@ void yyerror(const char *s);
 
 %token LEX_ERROR
 
-%right QUESTION IF WHEN
+%right '?' IF WHEN
 %left OR_ELSE
 %left OP_RANGE OP_RANGE_INCLUSIVE OP_RANGE_EXCLUSIVE
 %left OP_LOG_OR
@@ -129,9 +129,9 @@ return_type: /* empty */
    x: int
    x := 5    */
 var_decl:
-		ID ':' type_expr '=' expr 
-		| ID ':' type_expr
-		| ID OP_DECL_INFERRED expr
+		id_list ':' type_expr '=' expr 
+		| id_list ':' type_expr
+		| id_list OP_DECL_INFERRED expr
 		;
 
 
@@ -273,17 +273,21 @@ stmt: /*  x = 5 / x := 5 / x: int = 5 / x: int  */
     | when_stmt
     | return_stmt
     | defer_stmt
+    | ID ':' stmt
     | BREAK
+    | BREAK ID
     | CONTINUE
+    | CONTINUE ID 
     | FALLTHROUGH
-    | DIRECTIVE stmt  
+    | DIRECTIVE stmt
+    | USING expr  
     ;
 
 simple_stmt:
-           expr '=' expr 
-           | expr OP_DECL_INFERRED expr 
+           expr_list '=' expr_list 
+           | id_list OP_DECL_INFERRED expr_list 
            | expr ':' type_expr '=' expr
-           | expr ':' type_expr 
+           | id_list ':' type_expr 
 
            | expr OP_ADD_ASSIGN expr
            | expr OP_SUB_ASSIGN expr 
@@ -297,14 +301,18 @@ simple_stmt:
            | expr
            ;
 
-
 /* if x > 0 { }
    if x > 0 { } else { }
-   if x > 0 { } else if y > 0 { } else { } */
+   if x > 0 { } else if y > 0 { } else { } 
+   if x := foo(); x < 0 { ... }
+   if str, ok := value.(string); ok { ... }    */
 if_stmt:
        IF expr block 
        | IF expr block ELSE block
        | IF expr block ELSE if_stmt
+       | IF simple_stmt ';' expr block
+       | IF simple_stmt ';' expr block ELSE block
+       | IF simple_stmt ';' expr block ELSE if_stmt
        ;
 
 
@@ -361,7 +369,6 @@ expr_list:
          expr
          | expr_list ',' expr 
          ;
-
 
 when_stmt:
          WHEN expr block
@@ -436,7 +443,7 @@ expr: ID
     | expr OP_RANGE_EXCLUSIVE expr
 
      /* ---- тернарные формы ---- */
-    |expr '?' expr ':' expr  %prec QUESTION
+    |expr '?' expr ':' expr  %prec '?'
     |expr WHEN expr ELSE expr %prec WHEN
     |expr IF expr ELSE expr %prec IF
 

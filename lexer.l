@@ -54,20 +54,19 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 %%
 %{
     int comment_depth = 0;
-    char comment[20480];
     char string[20480];
     char charbuf[32];
     char *buf = string;
 %}
 
-"//"[^\n]*                       { /* ничего не возвращаем */ }
+"//"[^\n]*                          { /* ничего не возвращаем */ }
 
-"/*"                             { comment_depth = 1; comment[0] = '\0'; strcat(comment, yytext); BEGIN(ST_COMMENT); }
-<ST_COMMENT>"/*"                    { comment_depth++; strcat(comment, yytext); }
-<ST_COMMENT>\n                      { strcat(comment, yytext); }
-<ST_COMMENT>.                       { strcat(comment, yytext); }
-<ST_COMMENT><<EOF>>                 { fprintf(stderr, "Lex error: unclosed comment\n");BEGIN(INITIAL); return LEX_ERROR; }
-<ST_COMMENT>"*/"                    { strcat(comment, yytext); comment_depth--; if (comment_depth == 0) { printf("COMMENT: %s\n", comment); BEGIN(INITIAL); } }
+"/*"                                { comment_depth = 1; BEGIN(ST_COMMENT); }
+<ST_COMMENT>"/*"                    { comment_depth++; }
+<ST_COMMENT>\n                      { }
+<ST_COMMENT>.                       { }
+<ST_COMMENT><<EOF>>                 { fprintf(stderr, "Lex error: unclosed comment\n"); BEGIN(INITIAL); return LEX_ERROR; }
+<ST_COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) { BEGIN(INITIAL); } }
 
 \"                                  { buf = string; BEGIN(ST_STRING); string[0]='\0'; }
 <ST_STRING>[^\\\"\n]+               { strcat(string, yytext); }
@@ -76,7 +75,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 <ST_STRING><<EOF>>                  { fprintf(stderr, "Lex error: unclosed string\n"); BEGIN(INITIAL); return LEX_ERROR; }
 <ST_STRING>\"                       { BEGIN(INITIAL); yylval.str_val = strdup(string); return STRING_LIT; }
 
-\'                               { buf = charbuf; BEGIN(ST_CHAR); charbuf[0] = '\0'; }
+\'                                  { buf = charbuf; BEGIN(ST_CHAR); charbuf[0] = '\0'; }
 <ST_CHAR>[^\\'\n]+                  { strcat(charbuf, yytext); }
 <ST_CHAR>\n                         { fprintf(stderr, "Lex error: newline in rune literal\n"); BEGIN(INITIAL); return LEX_ERROR; }
 <ST_CHAR><<EOF>>                    { fprintf(stderr, "Lex error: unclosed rune literal\n"); BEGIN(INITIAL); return LEX_ERROR; }
@@ -167,7 +166,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0|[1-9](_?{DIGIT})*              { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
 
 {FLOAT_LIT}                        { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
-({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; strip_us(yytext, c); c[strlen(c) - 1] = '\0'; printf("IMAGINARY_LIT: %g%c\n", strtod(c, NULL), yytext[yyleng - 1]); yylval.str_val = strdup(yytext); return IMAGINARY_LIT; }
+({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { yylval.str_val = strdup(yytext); return IMAGINARY_LIT; }
 
 "&&="       { return OP_LOG_AND_ASSIGN; }
 "||="       { return OP_LOG_OR_ASSIGN; }

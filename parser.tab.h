@@ -141,40 +141,39 @@ extern int yydebug;
     BUILD_DIRECTIVE = 342,         /* BUILD_DIRECTIVE  */
     DIRECTIVE = 343,               /* DIRECTIVE  */
     AT = 344,                      /* AT  */
-    QUESTION = 345,                /* QUESTION  */
-    OP_ADD_ASSIGN = 346,           /* OP_ADD_ASSIGN  */
-    OP_SUB_ASSIGN = 347,           /* OP_SUB_ASSIGN  */
-    OP_MUL_ASSIGN = 348,           /* OP_MUL_ASSIGN  */
-    OP_DIV_ASSIGN = 349,           /* OP_DIV_ASSIGN  */
-    OP_MOD_ASSIGN = 350,           /* OP_MOD_ASSIGN  */
-    OP_MOD2_ASSIGN = 351,          /* OP_MOD2_ASSIGN  */
-    OP_OR_ASSIGN = 352,            /* OP_OR_ASSIGN  */
-    OP_NOT_ASSIGN = 353,           /* OP_NOT_ASSIGN  */
-    OP_AND_ASSIGN = 354,           /* OP_AND_ASSIGN  */
-    OP_AND_NOT_ASSIGN = 355,       /* OP_AND_NOT_ASSIGN  */
-    OP_SHL_ASSIGN = 356,           /* OP_SHL_ASSIGN  */
-    OP_SHR_ASSIGN = 357,           /* OP_SHR_ASSIGN  */
-    OP_LOG_AND_ASSIGN = 358,       /* OP_LOG_AND_ASSIGN  */
-    OP_LOG_OR_ASSIGN = 359,        /* OP_LOG_OR_ASSIGN  */
-    OP_LOG_AND = 360,              /* OP_LOG_AND  */
-    OP_LOG_OR = 361,               /* OP_LOG_OR  */
-    OP_AND_NOT = 362,              /* OP_AND_NOT  */
-    OP_SHL = 363,                  /* OP_SHL  */
-    OP_SHR = 364,                  /* OP_SHR  */
-    OP_EQ = 365,                   /* OP_EQ  */
-    OP_NE = 366,                   /* OP_NE  */
-    OP_LE = 367,                   /* OP_LE  */
-    OP_GE = 368,                   /* OP_GE  */
-    OP_RANGE = 369,                /* OP_RANGE  */
-    OP_RANGE_INCLUSIVE = 370,      /* OP_RANGE_INCLUSIVE  */
-    OP_RANGE_EXCLUSIVE = 371,      /* OP_RANGE_EXCLUSIVE  */
-    OP_ARROW = 372,                /* OP_ARROW  */
-    OP_DECL_TYPED = 373,           /* OP_DECL_TYPED  */
-    OP_DECL_INFERRED = 374,        /* OP_DECL_INFERRED  */
-    OP_MOD2 = 375,                 /* OP_MOD2  */
-    OP_DOLLAR = 376,               /* OP_DOLLAR  */
-    LEX_ERROR = 377,               /* LEX_ERROR  */
-    UNARY = 378                    /* UNARY  */
+    OP_ADD_ASSIGN = 345,           /* OP_ADD_ASSIGN  */
+    OP_SUB_ASSIGN = 346,           /* OP_SUB_ASSIGN  */
+    OP_MUL_ASSIGN = 347,           /* OP_MUL_ASSIGN  */
+    OP_DIV_ASSIGN = 348,           /* OP_DIV_ASSIGN  */
+    OP_MOD_ASSIGN = 349,           /* OP_MOD_ASSIGN  */
+    OP_MOD2_ASSIGN = 350,          /* OP_MOD2_ASSIGN  */
+    OP_OR_ASSIGN = 351,            /* OP_OR_ASSIGN  */
+    OP_NOT_ASSIGN = 352,           /* OP_NOT_ASSIGN  */
+    OP_AND_ASSIGN = 353,           /* OP_AND_ASSIGN  */
+    OP_AND_NOT_ASSIGN = 354,       /* OP_AND_NOT_ASSIGN  */
+    OP_SHL_ASSIGN = 355,           /* OP_SHL_ASSIGN  */
+    OP_SHR_ASSIGN = 356,           /* OP_SHR_ASSIGN  */
+    OP_LOG_AND_ASSIGN = 357,       /* OP_LOG_AND_ASSIGN  */
+    OP_LOG_OR_ASSIGN = 358,        /* OP_LOG_OR_ASSIGN  */
+    OP_LOG_AND = 359,              /* OP_LOG_AND  */
+    OP_LOG_OR = 360,               /* OP_LOG_OR  */
+    OP_AND_NOT = 361,              /* OP_AND_NOT  */
+    OP_SHL = 362,                  /* OP_SHL  */
+    OP_SHR = 363,                  /* OP_SHR  */
+    OP_EQ = 364,                   /* OP_EQ  */
+    OP_NE = 365,                   /* OP_NE  */
+    OP_LE = 366,                   /* OP_LE  */
+    OP_GE = 367,                   /* OP_GE  */
+    OP_RANGE = 368,                /* OP_RANGE  */
+    OP_RANGE_INCLUSIVE = 369,      /* OP_RANGE_INCLUSIVE  */
+    OP_RANGE_EXCLUSIVE = 370,      /* OP_RANGE_EXCLUSIVE  */
+    OP_ARROW = 371,                /* OP_ARROW  */
+    OP_DECL_TYPED = 372,           /* OP_DECL_TYPED  */
+    OP_DECL_INFERRED = 373,        /* OP_DECL_INFERRED  */
+    OP_MOD2 = 374,                 /* OP_MOD2  */
+    OP_DOLLAR = 375,               /* OP_DOLLAR  */
+    LEX_ERROR = 376,               /* LEX_ERROR  */
+    UNARY = 377                    /* UNARY  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -190,7 +189,7 @@ union YYSTYPE
     char        *str_val;
     unsigned int rune_val;
 
-#line 194 "parser.tab.h"
+#line 193 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
