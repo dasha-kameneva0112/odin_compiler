@@ -252,19 +252,91 @@ enum_item:
          | ID '=' expr
          ;
 
-block:
-     '{' stmt_list '}'
+block: '{' stmt_list '}'
      ;
 
-stmt_list:
-         /* empty */
+stmt_list: /* empty */
          | stmt_list stmt
          ;
 
-/* ЗАГЛУШКА */
-stmt:
-    ';'
+stmt: /*  x = 5 / x := 5 / x: int = 5 / x: int  */
+    simple_stmt
+    | block
+    | if_stmt
+    | for_stmt 
+    | return_stmt
+    | defer_stmt
+    | BREAK
+    | CONTINUE
+    | FALLTHROUGH
     ;
+
+simple_stmt:
+           ID '=' expr 
+           | ID OP_DECL_INFERRED expr 
+           | ID ':' type_expr '=' expr
+           | ID ':' type_expr 
+
+           | ID OP_ADD_ASSIGN expr
+           | ID OP_SUB_ASSIGN expr 
+           | ID OP_MUL_ASSIGN expr
+           | ID OP_DIV_ASSIGN expr
+           | ID OP_MOD_ASSIGN expr
+           | ID OP_AND_ASSIGN expr
+           | ID OP_OR_ASSIGN expr
+           | ID OP_SHL_ASSIGN expr
+           | ID OP_SHR_ASSIGN expr
+           | expr
+           ;
+
+
+/* if x > 0 { }
+   if x > 0 { } else { }
+   if x > 0 { } else if y > 0 { } else { } */
+if_stmt:
+       IF expr block 
+       | IF expr block ELSE block
+       | IF expr block ELSE if_stmt
+       ;
+
+
+/* for { }
+   for x < 10 { }
+   for x in arr { }
+   for k, v in m { }
+   for i := 0; i < n; i += 1 { }
+   for i := 0; i < 10; i += 1 do x += 1  */
+for_stmt:
+        FOR block
+        | FOR expr block
+
+        | FOR expr IN expr block 
+        | FOR expr ',' expr IN expr block 
+        
+        | FOR simple_stmt ';' expr ';' simple_stmt block 
+        
+        | FOR expr DO simple_stmt
+        | FOR expr IN expr DO simple_stmt
+        | FOR expr ',' expr IN expr DO simple_stmt
+        | FOR simple_stmt ';' expr ';' simple_stmt DO simple_stmt
+        ;
+
+
+/* return
+   return x + 1 */
+return_stmt: 
+           RETURN 
+           | RETURN expr
+           ;
+
+
+/* defer f()
+   defer fmt.println("done")
+   defer { n = 456 }         */
+defer_stmt:
+          DEFER stmt 
+          ;
+
 
 expr: ID
     | INT_LIT
@@ -341,12 +413,14 @@ expr: ID
 
 
 arg_list_op: /* empty */
-    | arg_list 
-    ;
+           | arg_list 
+           ;
 
 arg_list: expr
-    | arg_list ',' expr
-    ;
+        | arg_list ',' expr
+        ;
+
+
 %%
 
 void yyerror(const char *s) {
