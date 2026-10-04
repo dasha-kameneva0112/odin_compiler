@@ -310,7 +310,15 @@ expr: ID
     | expr '[' expr ']'
     | expr '.' ID
     | expr '^'
+         
+    /* ---- приведения типа ---- 
+    cast(i64) x */
+    |CAST '(' type_expr ')' expr % prec UNARY
+    /* ---- приведения типа ---- 
+    transmute(u32) 1.5 */
+    |TRANS_MUTE '(' type_expr ')' expr % prec UNARY
     ;
+
 
 arg_list_op: /* empty */
     | arg_list 
