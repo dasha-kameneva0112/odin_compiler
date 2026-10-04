@@ -14,6 +14,7 @@ void yyerror(const char *s);
 }
 
 %locations
+%expect 0
 %define parse.error verbose
 
 %token TRUE FALSE ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
@@ -60,340 +61,323 @@ void yyerror(const char *s);
 %left '(' '[' '.' '^' OR_RETURN OR_BREAK OR_CONTINUE 
 
 %%
-program: 
-	   package_clause import_list decl_list 
-	   ;
+/* ================= Верхний уровень ================= */
+program:
+      package_clause import_list decl_list
+    ;
 
-package_clause: 
-			  PACKAGE ID 
-              ;
+package_clause:
+      PACKAGE ID
+    | PACKAGE ID ';'
+    ;
 
 import_list:
-		   /* empty */
-		   | import_list import_decl
-		   ;
+      /* empty */
+    | import_list import_decl
+    ;
 
 import_decl:
-		   IMPORT STRING_LIT
-		   ;
+      IMPORT STRING_LIT
+    | IMPORT STRING_LIT ';'
+    ;
 
 decl_list:
-		 /* empty */
-		 | decl_list decl
-		 ;
+      /* empty */
+    | decl_list decl
+    ;
 
-decl: 
-	proc_decl
-	| var_decl
-	| const_decl
-	| type_decl
-	| foreign_decl
-	;
+/* необязательная ';' после объявления (её же вставит авто-';' лексера) */
+decl:
+      decl_core
+    | decl_core ';'
+    ;
+
+decl_core:
+      proc_decl
+    | var_decl
+    | const_decl
+    | type_decl
+    | foreign_decl
+    ;
 
 /* ---- Процедура ----
    main :: proc() { }
-   add  :: proc(a: int, b: int) -> int { }
    foo  :: proc { foo_int, foo_str }        */
 proc_decl:
-		 ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
-		 | ID OP_DECL_TYPED PROC '{' id_list '}'
-		 ;
+      ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
+    | ID OP_DECL_TYPED PROC '{' id_list '}'
+    ;
 
 param_list_opt:
-              /* empty */
-              | param_list
-              ;
+      /* empty */
+    | param_list
+    ;
 
 param_list:
-          param
-          | param_list ',' param
-          ;
+      param
+    | param_list ',' param
+    ;
 
 param:
-	 id_list ':' type_expr
-	 ;
+      id_list ':' type_expr
+    ;
 
-id_list: 
-	   ID
-	   | id_list ',' ID 
-	   ;
+id_list:
+      ID
+    | id_list ',' ID
+    ;
 
-return_type: /* empty */
-           | OP_ARROW type_expr
-           | OP_ARROW '(' type_list ')'
-           ;
+return_type:
+      /* empty */
+    | OP_ARROW type_expr
+    | OP_ARROW '(' return_type_list ')'
+    ;
 
+return_type_list:
+      type_expr
+    | return_type_list ',' type_expr
+    ;
 
-/* ---- Переменная ----
-   x: int = 5
-   x: int
-   x := 5    */
+/* ---- Переменные и типизированные константы (общий префикс id_list ':') ----
+   x: int = 5   x: int   x := 5   x, y := 1, 2   MAX: int : 100 */
 var_decl:
-		id_list ':' type_expr '=' expr 
-		| id_list ':' type_expr
-		| id_list OP_DECL_INFERRED expr
-		;
+        id_list ':' type_expr '=' expr_list 
+        | id_list ':' type_expr
+        | id_list OP_DECL_INFERRED expr_list
+        ;
 
 
 /* ---- Константа ----   
-    	MAX :: 100 
-        MAX: int : 100    */
+        MAX :: 100 
+        MAX: int : 100   
+        C, D, E: f32 : 1.0, 2.0, 3.0*/
 const_decl:
-		  ID OP_DECL_TYPED expr 
-          | ID ':' type_expr ':' expr
-		  ;
+          ID OP_DECL_TYPED expr 
+          | id_list  ':' type_expr ':' expr_list
+          ;
+  /* ---- Объявление типа ----
+   Point :: struct { x, y: int }
+   Здесь только type_core: "A :: B" (B - идентификатор) разбирается как const_decl,
+   иначе ID попадал бы и в expr, и в type_expr (reduce/reduce). */
+type_decl:
+      ID OP_DECL_TYPED type_core
+    ;
 
+type_expr:
+      ID
+    | type_core
+    ;
 
-/* ---- Объявление типа ----
-   MyInt  :: int
-   Point  :: struct { x, y: int }   */
-type_decl: 
-         ID OP_DECL_TYPED type_expr 
-         ;
-
-type_expr: 
-         ID    
-         | type_core 
-         ;
-
-/* MyType / ^T / []T (срез) / [N]T (массив)
-   [dynamic]T / map[K]V / proc(...)->T 
-   кортеж  (int, string) / анонимный struct/enum/union
-   bit_set[T] / distinct T / matrix[R,C]T */
-type_core: 
-         base_type
-         | '^' type_expr
-         | '[' ']' type_expr
-         | '[' expr ']' type_expr
-         | '[' DYNAMIC ']' type_expr
-         | MAP '[' type_expr ']' type_expr
-         | PROC '(' param_list_opt ')' return_type
-         | '(' type_list ')'
-         | STRUCT '{' field_list_opt '}'
-         | ENUM '{' enum_body_opt '}'
-         | UNION '{' field_list_opt '}'
-         | BIT_SET '[' type_expr ']'
-         | DISTINCT type_expr
-         | MATRIX '[' expr ',' expr ']' type_expr
-         ;
+type_core:
+      base_type
+    | '^' type_expr
+    | '[' ']' type_expr
+    | '[' expr ']' type_expr
+    | '[' DYNAMIC ']' type_expr
+    | MAP '[' type_expr ']' type_expr
+    | PROC '(' param_list_opt ')' return_type
+    | STRUCT '{' field_list_opt '}'
+    | ENUM '{' enum_body_opt '}'
+    | UNION '{' field_list_opt '}'
+    | BIT_SET '[' type_expr ']'
+    | DISTINCT type_expr
+    | MATRIX '[' expr ',' expr ']' type_expr
+    ;
 
 field_list_opt:
-              /* empty */
-              | field_list
-              ;
+      /* empty */
+    | field_list
+    ;
 
 field_list:
-          field_decl
-          | field_list ',' field_decl
-          ;
+      field_decl
+    | field_list ',' field_decl
+    ;
 
 field_decl:
-		  id_list ':' type_expr
-		  ;
+      id_list ':' type_expr
+    ;
 
-
-/* ---- Foreign ----
-   foreign import foo "lib"
-   foreign { ... }            */
 foreign_decl:
-		  	FOREIGN IMPORT ID STRING_LIT 
-			| FOREIGN block 
-            ;
+      FOREIGN IMPORT ID STRING_LIT
+    | FOREIGN block
+    ;
 
 base_type:
-         BOOL
-         | B8  
-         | B16 
-         | B32 
-         | B64    
-         | INT 
-         | I8  
-         | I16 
-         | I32 
-         | I64 
-         | I128    
-         | UINT 
-         | U8 
-         | U16 
-         | U32 
-         | U64 
-         | U128    
-         | UINTPTR    
-         | F16 
-         | F32 
-         | F64
-         | COMPLEX32 
-         | COMPLEX64 
-         | COMPLEX128
-         | QUATERNION64 
-         | QUATERNION128 
-         | QUATERNION256
-         | STRING 
-         | CSTRING 
-         | BYTE 
-         | RUNE 
-         | RAWPTR 
-         | ANY
-         ;
-
-type_list:
-         type_expr
-         | type_list ',' type_expr
-         ;
+      BOOL | B8 | B16 | B32 | B64
+    | INT | I8 | I16 | I32 | I64 | I128
+    | UINT | U8 | U16 | U32 | U64 | U128 | UINTPTR
+    | F16 | F32 | F64
+    | COMPLEX32 | COMPLEX64 | COMPLEX128
+    | QUATERNION64 | QUATERNION128 | QUATERNION256
+    | STRING | CSTRING | BYTE | RUNE | RAWPTR | ANY
+    ;
 
 enum_body_opt:
-             /* empty */
-             | enum_body
-             ;
+      /* empty */
+    | enum_body
+    ;
 
 enum_body:
-         enum_item
-         | enum_body ',' enum_item
-         ;
+      enum_item
+    | enum_body ',' enum_item
+    ;
 
 enum_item:
-         ID
-         | ID '=' expr
-         ;
+      ID
+    | ID '=' expr
+    ;
 
+/* ================= Операторы =================
+   Операторы разделяются ';' (в Odin её вставляет лексер в конце строки).
+   Составные (оканчиваются '}') могут идти без ';', простые - нет.
+   Последний простой оператор перед '}' / case может быть без ';'. */
 block:
-     '{' stmt_list '}'
-     ;
+      '{' stmts '}'
+    ;
 
-stmt_list: /* empty */
-         | stmt_list stmt
-         ;
+stmts:
+      stmt_list
+    | stmt_list term_stmt
+    ;
 
-stmt: /*  x = 5 / x := 5 / x: int = 5 / x: int  */
-    simple_stmt
-    | block
+stmt_list:
+      /* empty */
+    | stmt_list stmt
+    ;
+
+stmt:
+      compound_stmt
+    | compound_stmt ';'
+    | term_stmt ';'
+    ;
+
+compound_stmt:
+      block
     | if_stmt
-    | for_stmt 
-    | switch_stmt 
+    | for_stmt
+    | switch_stmt
     | when_stmt
+    | label_stmt
+    ;
+
+/* label: for ... ; метка - обычный ID (проверяется семантически),
+   т.к. "ID ':'" иначе конфликтует с expr_list ':' type_expr */
+label_stmt:
+      expr_list ':' labelable_stmt
+    ;
+
+labelable_stmt:
+      block
+    | if_stmt
+    | for_stmt
+    | switch_stmt
+    ;
+
+term_stmt:
+      simple_stmt
+    | for_do_stmt
     | return_stmt
-    | defer_stmt
-    | ID ':' stmt
     | BREAK
-    | BREAK ID
     | CONTINUE
-    | CONTINUE ID 
     | FALLTHROUGH
-    | DIRECTIVE stmt
-    | USING expr  
+    | USING expr
+    | DEFER term_stmt
+    | DEFER compound_stmt
+    | DIRECTIVE term_stmt
+    | DIRECTIVE compound_stmt
     ;
 
 simple_stmt:
-           expr_list '=' expr_list 
-           | id_list OP_DECL_INFERRED expr_list 
-           | expr ':' type_expr '=' expr
-           | id_list ':' type_expr 
+      expr_list '=' expr_list
+    | expr_list OP_DECL_INFERRED expr_list
+    | expr_list ':' type_expr
+    | expr_list ':' type_expr '=' expr_list
+    | expr_list ':' type_expr ':' expr_list
+    | expr assign_op expr
+    | expr
+    ;
 
-           | expr OP_ADD_ASSIGN expr
-           | expr OP_SUB_ASSIGN expr 
-           | expr OP_MUL_ASSIGN expr
-           | expr OP_DIV_ASSIGN expr
-           | expr OP_MOD_ASSIGN expr
-           | expr OP_AND_ASSIGN expr
-           | expr OP_OR_ASSIGN expr
-           | expr OP_SHL_ASSIGN expr
-           | expr OP_SHR_ASSIGN expr
-           | expr
-           ;
+assign_op:
+      OP_ADD_ASSIGN | OP_SUB_ASSIGN | OP_MUL_ASSIGN | OP_DIV_ASSIGN
+    | OP_MOD_ASSIGN | OP_MOD2_ASSIGN | OP_OR_ASSIGN | OP_NOT_ASSIGN
+    | OP_AND_ASSIGN | OP_AND_NOT_ASSIGN | OP_SHL_ASSIGN | OP_SHR_ASSIGN
+    | OP_LOG_AND_ASSIGN | OP_LOG_OR_ASSIGN
+    ;
 
-/* if x > 0 { }
-   if x > 0 { } else { }
-   if x > 0 { } else if y > 0 { } else { } 
-   if x := foo(); x < 0 { ... }
-   if str, ok := value.(string); ok { ... }    */
+simple_stmt_opt:
+      /* empty */
+    | simple_stmt
+    ;
+
+expr_opt:
+      /* empty */
+    | expr
+    ;
+
 if_stmt:
-       IF expr block 
-       | IF expr block ELSE block
-       | IF expr block ELSE if_stmt
-       | IF simple_stmt ';' expr block
-       | IF simple_stmt ';' expr block ELSE block
-       | IF simple_stmt ';' expr block ELSE if_stmt
-       ;
+      IF expr block
+    | IF expr block ELSE block
+    | IF expr block ELSE if_stmt
+    | IF simple_stmt ';' expr block
+    | IF simple_stmt ';' expr block ELSE block
+    | IF simple_stmt ';' expr block ELSE if_stmt
+    ;
 
-
-/* for { }
-   for x < 10 { }
-   for x in arr { }
-   for k, v in m { }
-   for i := 0; i < n; i += 1 { }
-   for i := 0; i < 10; i += 1 do x += 1  */
 for_stmt:
-        FOR block
-        | FOR expr block
+      FOR block
+    | FOR expr block
+    | FOR expr_list IN expr block
+    | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt block
+    ;
 
-        | FOR expr IN expr block 
-        | FOR expr ',' expr IN expr block 
-        
-        | FOR simple_stmt ';' expr ';' simple_stmt block 
-        
-        | FOR expr DO simple_stmt
-        | FOR expr IN expr DO simple_stmt
-        | FOR expr ',' expr IN expr DO simple_stmt
-        | FOR simple_stmt ';' expr ';' simple_stmt DO simple_stmt
-        ;
+/* однострочные формы с do - простой оператор, требуют ';' после себя */
+for_do_stmt:
+      FOR expr DO term_stmt
+    | FOR expr_list IN expr DO term_stmt
+    | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO term_stmt
+    ;
 
-/* switch x { case 1: foo() ... case: baz() }
-   switch { case x > 0: foo() ... case: baz() }
-   switch y := f(); y { case 1: ... } switch y := f(); { case y > 0: ... } */
 switch_stmt:
-           SWITCH switch_body
-           | SWITCH expr switch_body
-           | SWITCH simple_stmt ';' expr switch_body
-           | SWITCH simple_stmt ';' switch_body
-           ;
+      SWITCH switch_body
+    | SWITCH expr switch_body
+    | SWITCH simple_stmt ';' expr switch_body
+    | SWITCH simple_stmt ';' switch_body
+    ;
 
 switch_body:
-           '{' case_list '}'
-           ;
+      '{' case_list '}'
+    ;
 
 case_list:
-         /* empty */
-         | case_list case_clause 
-         ;
+      /* empty */
+    | case_list case_clause
+    ;
 
-/* case 1: foo()
-   case 1, 2, 3: bar()
-   case 0..<10: baz()
-   case: qux()           */
 case_clause:
-           CASE expr_list ':' stmt_list
-           | CASE ':' stmt_list
-           ;
+      CASE expr_list ':' stmts
+    | CASE ':' stmts
+    ;
 
 expr_list:
-         expr
-         | expr_list ',' expr 
-         ;
+      expr
+    | expr_list ',' expr
+    ;
 
 when_stmt:
-         WHEN expr block
-         | WHEN expr block ELSE when_stmt
-         | WHEN expr block ELSE block
-         ;
+      WHEN expr block
+    | WHEN expr block ELSE when_stmt
+    | WHEN expr block ELSE block
+    ;
 
+return_stmt:
+      RETURN
+    | RETURN expr_list
+    ;
 
-/* return
-   return x + 1 */
-return_stmt: 
-           RETURN 
-           | RETURN expr
-           ;
-
-
-/* defer f()
-   defer fmt.println("done")
-   defer { n = 456 }         */
-defer_stmt:
-          DEFER stmt 
-          ;
-
-
-expr: ID
+/* ================= Выражения ================= */
+expr:
+      ID
     | INT_LIT
     | FLOAT_LIT
     | STRING_LIT
@@ -406,7 +390,6 @@ expr: ID
     | FALSE
     | '(' expr ')'
 
-	/* ---- unary ---- */
     | '+' expr %prec UNARY
     | '-' expr %prec UNARY
     | '!' expr %prec UNARY
@@ -414,7 +397,6 @@ expr: ID
     | '&' expr %prec UNARY
     | AUTO_CAST expr %prec UNARY
 
-	/* ---- binary ---- */
     | expr OP_LOG_OR expr
     | expr OP_LOG_AND expr
     | expr OP_EQ expr
@@ -436,45 +418,36 @@ expr: ID
     | expr OP_SHL expr
     | expr OP_SHR expr
 
-    /* ---- or_else и диапазоны (.., ..=, ..<) ---- */
     | expr OR_ELSE expr
     | expr OP_RANGE expr
     | expr OP_RANGE_INCLUSIVE expr
     | expr OP_RANGE_EXCLUSIVE expr
 
-     /* ---- тернарные формы ---- */
-    |expr '?' expr ':' expr  %prec '?'
-    |expr WHEN expr ELSE expr %prec WHEN
-    |expr IF expr ELSE expr %prec IF
+    | expr '?' expr ':' expr  %prec '?'
+    | expr WHEN expr ELSE expr %prec WHEN
+    | expr IF expr ELSE expr %prec IF
 
-    /* ---- постфиксные  ---- */
     | expr '^'
     | expr OR_RETURN
     | expr OR_BREAK
-    /* | expr OR_BREAK ID */
     | expr OR_CONTINUE
-    /* | expr OR_CONTINUE ID */
     | expr '(' arg_list_op ')'
     | expr '[' expr ']'
     | expr '.' ID
-         
-    /* ---- приведения типа ---- 
-    cast(i64) x */
-    |CAST '(' type_expr ')' expr %prec UNARY
-    /* ---- приведения типа ---- 
-    transmute(u32) 1.5 */
-    |TRANSMUTE '(' type_expr ')' expr %prec UNARY
+
+    | CAST '(' type_expr ')' expr %prec UNARY
+    | TRANSMUTE '(' type_expr ')' expr %prec UNARY
     ;
 
+arg_list_op:
+      /* empty */
+    | arg_list
+    ;
 
-arg_list_op: /* empty */
-           | arg_list 
-           ;
-
-arg_list: expr
-        | arg_list ',' expr
-        ;
-
+arg_list:
+      expr
+    | arg_list ',' expr
+    ;
 
 %%
 
