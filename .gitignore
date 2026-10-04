@@ -1,0 +1,18 @@
+# === Сгенерированное flex ===
+lex.yy.c
+lex.yy.h
+
+# === Сгенерированное bison ===
+parser.tab.c
+parser.tab.h
+parser.output      
+
+# === Результаты запуска / отладка ===
+result
+*.log
+*.tmp
+
+# === IDE / редактор ===
+.vscode/
+.idea/
+*.swp
