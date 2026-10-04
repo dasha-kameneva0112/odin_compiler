@@ -130,9 +130,11 @@ var_decl:
 
 
 /* ---- Константа ----   
-    	MAX :: 100  */
+    	MAX :: 100 
+        MAX: int : 100    */
 const_decl:
 		  ID OP_DECL_TYPED expr 
+          | ID ':' type_expr ':' expr
 		  ;
 
 
@@ -140,7 +142,12 @@ const_decl:
    MyInt  :: int
    Point  :: struct { x, y: int }   */
 type_decl: 
-         ID OP_DECL_TYPED type_core
+         ID OP_DECL_TYPED type_expr 
+         ;
+
+type_expr: 
+         ID    
+         | type_core 
          ;
 
 /* MyType / ^T / []T (срез) / [N]T (массив)
@@ -156,7 +163,7 @@ type_core:
          | MAP '[' type_expr ']' type_expr
          | PROC '(' param_list_opt ')' return_type
          | STRUCT '{' field_list_opt '}'
-         | ENUM '{' enum_body '}'
+         | ENUM '{' enum_body_opt '}'
          | UNION '{' field_list_opt '}'
          | BIT_SET '[' type_expr ']'
          | DISTINCT type_expr
@@ -176,11 +183,6 @@ field_list:
 field_decl:
 		  id_list ':' type_expr
 		  ;
-
-type_expr: 
-         ID    
-         | type_core 
-         ;
 
 
 /* ---- Foreign ----
@@ -232,9 +234,13 @@ type_list:
          | type_list ',' type_expr
          ;
 
+enum_body_opt:
+             /* empty */
+             | enum_body
+             ;
+
 enum_body:
-         /* empty */
-         | enum_item
+         enum_item
          | enum_body ',' enum_item
          ;
 
