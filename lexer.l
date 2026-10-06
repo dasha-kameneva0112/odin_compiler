@@ -7,6 +7,7 @@
 %x ST_RAW_STRING
 
 %{
+#define YY_DECL int odin_lex(void)
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -268,13 +269,13 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return DIRECTIVE; }
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
-[ \t\r\n]+                          { /* пропускаем пробелы */ }
+[ \t\r]+                            { /* пропускаем пробелы */ }
+\n                                  { return '\n'; }
 <*>.                                { fprintf(stderr, "Lex error: unknown symbol '%s' at %d:%d\n", yytext, yylloc.first_line, yylloc.first_column); return LEX_ERROR; }
 
 %%
 
-char *strip_us(const char *src, char *dest)
-{
+char *strip_us(const char *src, char *dest) {
     int j = 0;
 
     for (int i = 0; src[i] != '\0'; i++)
@@ -288,8 +289,7 @@ char *strip_us(const char *src, char *dest)
     return dest;
 }
 
-unsigned int first_codepoint(const unsigned char *s)
-{
+unsigned int first_codepoint(const unsigned char *s) {
     if (s[0] < 0x80) return s[0];
     if ((s[0] & 0xE0) == 0xC0) return ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
     if ((s[0] & 0xF0) == 0xE0)
@@ -321,4 +321,41 @@ void append_utf8(char *dest, unsigned int codepoint) {
     }
     utf8[n] = '\0';
     strcat(dest, utf8);
+}
+
+int odin_lex(void);
+static int last_token = 0;
+
+/* После каких токенов Odin вставляет ; */
+static int can_end_stmt(int tok)
+{
+    switch (tok) {
+        case ID:
+        case INT_LIT: case FLOAT_LIT: case STRING_LIT:
+        case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
+        case TRUE: case FALSE: case NIL: case UNDEFINED:
+        case BREAK: case CONTINUE: case FALLTHROUGH:
+        case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
+        case ')': case ']': case '}':
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+int yylex(void)
+{
+    for (;;) {
+        int tok = odin_lex();
+        if (tok == '\n') {      /* решаем, вставить ; или пропустить */
+            if (can_end_stmt(last_token)) {
+                last_token = ';';
+                return ';';
+            }
+            continue;
+        }
+
+        if (tok != 0) last_token = tok;
+        return tok;
+    }
 }

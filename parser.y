@@ -62,8 +62,12 @@ void yyerror(const char *s);
 %precedence '(' '[' '.' '^' OR_RETURN OR_BREAK OR_CONTINUE 
 
 %%
-/* ================= Верхний уровень ================= */
-program:package_clause import_list decl_list
+/* ---- Верхний уровень (программа) ----
+  package main
+  import "core:fmt"
+  main :: proc() { }                        */
+program:
+       package_clause import_list decl_list
        ;
 
 package_clause:PACKAGE ID
