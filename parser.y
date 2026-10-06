@@ -14,7 +14,6 @@ void yyerror(const char *s);
 }
 
 %locations
-%expect 0
 %define parse.error verbose
 
 %token TRUE FALSE ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
@@ -63,83 +62,78 @@ void yyerror(const char *s);
 %%
 /* ================= Верхний уровень ================= */
 program:
-      package_clause import_list decl_list
-    ;
+       package_clause import_list decl_list
+       ;
 
 package_clause:
-      PACKAGE ID
-    | PACKAGE ID ';'
-    ;
+              PACKAGE ID
+              | PACKAGE ID ';'
+              ;
 
-import_list:
-      /* empty */
-    | import_list import_decl
-    ;
+import_list: /* empty */
+           | import_list import_decl
+           ;
 
 import_decl:
-      IMPORT STRING_LIT
-    | IMPORT STRING_LIT ';'
-    ;
+           IMPORT STRING_LIT
+           | IMPORT STRING_LIT ';'
+           ;
 
-decl_list:
-      /* empty */
-    | decl_list decl
-    ;
+decl_list: /* empty */
+         | decl_list decl
+         ;
 
-/* необязательная ';' после объявления (её же вставит авто-';' лексера) */
 decl:
-      decl_core
+    decl_core
     | decl_core ';'
     ;
 
 decl_core:
-      proc_decl
-    | var_decl
-    | const_decl
-    | type_decl
-    | foreign_decl
-    ;
+         proc_decl
+         | var_decl
+         | const_decl
+         | type_decl
+         | foreign_decl
+         ;
 
 /* ---- Процедура ----
-   main :: proc() { }
-   foo  :: proc { foo_int, foo_str }        */
+  main :: proc() { }
+  foo  :: proc { foo_int, foo_str }        */
 proc_decl:
-      ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
-    | ID OP_DECL_TYPED PROC '{' id_list '}'
-    ;
+         ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
+         | ID OP_DECL_TYPED PROC '{' id_list '}'
+         ;
 
-param_list_opt:
-      /* empty */
-    | param_list
-    ;
+param_list_opt: /* empty */
+              | param_list
+              ;
 
 param_list:
-      param
-    | param_list ',' param
-    ;
+          param
+          | param_list ',' param
+          ;
 
 param:
-      id_list ':' type_expr
-    ;
+     expr_list ':' type_expr
+     ;
 
 id_list:
-      ID
-    | id_list ',' ID
-    ;
+       ID
+       | id_list ',' ID
+       ;
 
-return_type:
-      /* empty */
-    | OP_ARROW type_expr
-    | OP_ARROW '(' return_type_list ')'
-    ;
+return_type: /* empty */
+           | OP_ARROW type_expr
+           | OP_ARROW '(' return_type_list ')'
+           ;
 
 return_type_list:
-      type_expr
-    | return_type_list ',' type_expr
-    ;
+                type_expr
+                | return_type_list ',' type_expr
+                ;
 
 /* ---- Переменные и типизированные константы (общий префикс id_list ':') ----
-   x: int = 5   x: int   x := 5   x, y := 1, 2   MAX: int : 100 */
+  x: int = 5   x: int   x := 5   x, y := 1, 2   MAX: int : 100 *           /
 var_decl:
         id_list ':' type_expr '=' expr_list 
         | id_list ':' type_expr
@@ -148,236 +142,246 @@ var_decl:
 
 
 /* ---- Константа ----   
-        MAX :: 100 
-        MAX: int : 100   
-        C, D, E: f32 : 1.0, 2.0, 3.0*/
+  MAX :: 100 
+  MAX: int : 100   
+  C, D, E: f32 : 1.0, 2.0, 3.0    */
 const_decl:
           ID OP_DECL_TYPED expr 
           | id_list  ':' type_expr ':' expr_list
           ;
-  /* ---- Объявление типа ----
-   Point :: struct { x, y: int }
-   Здесь только type_core: "A :: B" (B - идентификатор) разбирается как const_decl,
-   иначе ID попадал бы и в expr, и в type_expr (reduce/reduce). */
-type_decl:
-      ID OP_DECL_TYPED type_core
-    ;
+
+/* ---- Объявление типа ----
+  Point :: struct { x, y: int }    */
+type_decl:      
+         ID OP_DECL_TYPED type_core
+         ;
 
 type_expr:
-      ID
-    | type_core
-    ;
+         ID
+         | type_core
+         ;
 
 type_core:
-      base_type
-    | '^' type_expr
-    | '[' ']' type_expr
-    | '[' expr ']' type_expr
-    | '[' DYNAMIC ']' type_expr
-    | MAP '[' type_expr ']' type_expr
-    | PROC '(' param_list_opt ')' return_type
-    | STRUCT '{' field_list_opt '}'
-    | ENUM '{' enum_body_opt '}'
-    | UNION '{' field_list_opt '}'
-    | BIT_SET '[' type_expr ']'
-    | DISTINCT type_expr
-    | MATRIX '[' expr ',' expr ']' type_expr
-    ;
+         base_type
+         | '^' type_expr
+         | '[' ']' type_expr
+         | '[' expr ']' type_expr
+         | '[' DYNAMIC ']' type_expr
+         | MAP '[' type_expr ']' type_expr
+         | PROC '(' param_list_opt ')' return_type
+         | STRUCT '{' field_list_opt '}'
+         | ENUM '{' enum_body_opt '}'
+         | UNION '{' field_list_opt '}'
+         | BIT_SET '[' type_expr ']'
+         | DISTINCT type_expr
+         | MATRIX '[' expr ',' expr ']' type_expr
+         ;
 
-field_list_opt:
-      /* empty */
-    | field_list
-    ;
+field_list_opt: /* empty */
+              | field_list
+              ;
 
 field_list:
-      field_decl
-    | field_list ',' field_decl
-    ;
+          field_decl
+          | field_list ',' field_decl
+          ;
 
 field_decl:
-      id_list ':' type_expr
-    ;
+          expr_list ':' type_expr
+          ;
 
 foreign_decl:
-      FOREIGN IMPORT ID STRING_LIT
-    | FOREIGN block
-    ;
+            FOREIGN IMPORT ID STRING_LIT
+            | FOREIGN block
+            ;
 
-base_type:
-      BOOL | B8 | B16 | B32 | B64
-    | INT | I8 | I16 | I32 | I64 | I128
-    | UINT | U8 | U16 | U32 | U64 | U128 | UINTPTR
-    | F16 | F32 | F64
-    | COMPLEX32 | COMPLEX64 | COMPLEX128
-    | QUATERNION64 | QUATERNION128 | QUATERNION256
-    | STRING | CSTRING | BYTE | RUNE | RAWPTR | ANY
-    ;
+base_type: BOOL 
+         | B8 
+         | B16 
+         | B32 
+         | B64
+         | INT 
+         | I8 
+         | I16 
+         | I32 
+         | I64 
+         | I128
+         | UINT 
+         | U8 
+         | U16 
+         | U32 
+         | U64 
+         | U128 
+         | UINTPTR 
+         | F16 
+         | F32 
+         | F64
+         | COMPLEX32 
+         | COMPLEX64 
+         | COMPLEX128
+         | QUATERNION64 
+         | QUATERNION128 
+         | QUATERNION256
+         | STRING 
+         | CSTRING 
+         | BYTE 
+         | RUNE 
+         | RAWPTR 
+         | ANY
+         ;
 
-enum_body_opt:
-      /* empty */
-    | enum_body
-    ;
+enum_body_opt: /* empty */
+             | enum_body
+             ;
 
 enum_body:
-      enum_item
-    | enum_body ',' enum_item
-    ;
+         enum_item
+         | enum_body ',' enum_item
+         ;
 
 enum_item:
-      ID
-    | ID '=' expr
-    ;
+         ID
+         | ID '=' expr
+         ;
 
-/* ================= Операторы =================
-   Операторы разделяются ';' (в Odin её вставляет лексер в конце строки).
-   Составные (оканчиваются '}') могут идти без ';', простые - нет.
-   Последний простой оператор перед '}' / case может быть без ';'. */
-block:
-      '{' stmts '}'
-    ;
+/* ---- Операторы ---- */
+block: '{' stmts '}'
+     ;
 
 stmts:
       stmt_list
-    | stmt_list term_stmt
-    ;
+      | stmt_list term_stmt
+      ;
 
-stmt_list:
-      /* empty */
-    | stmt_list stmt
-    ;
+stmt_list: /* empty */
+         | stmt_list stmt
+         ;
 
 stmt:
-      compound_stmt
+    compound_stmt
     | compound_stmt ';'
     | term_stmt ';'
     ;
 
 compound_stmt:
-      block
-    | if_stmt
-    | for_stmt
-    | switch_stmt
-    | when_stmt
-    | label_stmt
-    ;
+             block
+             | if_stmt
+             | for_stmt
+             | switch_stmt
+             | when_stmt
+             | label_stmt
+             ;
 
 /* label: for ... ; метка - обычный ID (проверяется семантически),
    т.к. "ID ':'" иначе конфликтует с expr_list ':' type_expr */
 label_stmt:
-      expr_list ':' labelable_stmt
-    ;
+          expr_list ':' labelable_stmt
+          ;
 
 labelable_stmt:
-      block
-    | if_stmt
-    | for_stmt
-    | switch_stmt
-    ;
+              block
+              | if_stmt
+              | for_stmt
+              | switch_stmt
+              ;
 
 term_stmt:
-      simple_stmt
-    | for_do_stmt
-    | return_stmt
-    | BREAK
-    | CONTINUE
-    | FALLTHROUGH
-    | USING expr
-    | DEFER term_stmt
-    | DEFER compound_stmt
-    | DIRECTIVE term_stmt
-    | DIRECTIVE compound_stmt
-    ;
+         simple_stmt
+         | for_do_stmt
+         | return_stmt
+         | BREAK
+         | CONTINUE
+         | FALLTHROUGH
+         | USING expr
+         | DEFER term_stmt
+         | DEFER compound_stmt
+         | DIRECTIVE term_stmt
+         | DIRECTIVE compound_stmt
+         ;
 
 simple_stmt:
-      expr_list '=' expr_list
-    | expr_list OP_DECL_INFERRED expr_list
-    | expr_list ':' type_expr
-    | expr_list ':' type_expr '=' expr_list
-    | expr_list ':' type_expr ':' expr_list
-    | expr assign_op expr
-    | expr
-    ;
+           expr_list '=' expr_list
+           | expr_list OP_DECL_INFERRED expr_list
+           | expr_list ':' type_expr
+           | expr_list ':' type_expr '=' expr_list
+           | expr_list ':' type_expr ':' expr_list
+           | expr assign_op expr
+           | expr
+           ;
 
 assign_op:
-      OP_ADD_ASSIGN | OP_SUB_ASSIGN | OP_MUL_ASSIGN | OP_DIV_ASSIGN
-    | OP_MOD_ASSIGN | OP_MOD2_ASSIGN | OP_OR_ASSIGN | OP_NOT_ASSIGN
-    | OP_AND_ASSIGN | OP_AND_NOT_ASSIGN | OP_SHL_ASSIGN | OP_SHR_ASSIGN
-    | OP_LOG_AND_ASSIGN | OP_LOG_OR_ASSIGN
-    ;
+         OP_ADD_ASSIGN | OP_SUB_ASSIGN | OP_MUL_ASSIGN | OP_DIV_ASSIGN
+         | OP_MOD_ASSIGN | OP_MOD2_ASSIGN | OP_OR_ASSIGN | OP_NOT_ASSIGN
+         | OP_AND_ASSIGN | OP_AND_NOT_ASSIGN | OP_SHL_ASSIGN | OP_SHR_ASSIGN
+         | OP_LOG_AND_ASSIGN | OP_LOG_OR_ASSIGN
+         ;
 
-simple_stmt_opt:
-      /* empty */
-    | simple_stmt
-    ;
+simple_stmt_opt: /* empty */
+               | simple_stmt
+               ;
 
-expr_opt:
-      /* empty */
-    | expr
-    ;
+expr_opt: /* empty */
+        | expr
+        ;
 
 if_stmt:
-      IF expr block
-    | IF expr block ELSE block
-    | IF expr block ELSE if_stmt
-    | IF simple_stmt ';' expr block
-    | IF simple_stmt ';' expr block ELSE block
-    | IF simple_stmt ';' expr block ELSE if_stmt
-    ;
+       IF expr block
+       | IF expr block ELSE block
+       | IF expr block ELSE if_stmt
+       | IF simple_stmt ';' expr block
+       | IF simple_stmt ';' expr block ELSE block
+       | IF simple_stmt ';' expr block ELSE if_stmt
+       ;
 
 for_stmt:
-      FOR block
-    | FOR expr block
-    | FOR expr_list IN expr block
-    | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt block
-    ;
+        FOR block
+        | FOR expr block
+        | FOR expr_list IN expr block
+        | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt block
+        ;
 
-/* однострочные формы с do - простой оператор, требуют ';' после себя */
 for_do_stmt:
-      FOR expr DO term_stmt
-    | FOR expr_list IN expr DO term_stmt
-    | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO term_stmt
-    ;
+           FOR expr DO term_stmt    
+           | FOR expr_list IN expr DO term_stmt
+           | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO term_stmt
+           ;
 
 switch_stmt:
-      SWITCH switch_body
-    | SWITCH expr switch_body
-    | SWITCH simple_stmt ';' expr switch_body
-    | SWITCH simple_stmt ';' switch_body
-    ;
+           SWITCH switch_body
+           | SWITCH expr switch_body
+           | SWITCH simple_stmt ';' expr switch_body
+           | SWITCH simple_stmt ';' switch_body
+           ;
 
-switch_body:
-      '{' case_list '}'
-    ;
+switch_body: '{' case_list '}'
+           ;
 
-case_list:
-      /* empty */
-    | case_list case_clause
-    ;
+case_list: /* empty */
+         | case_list case_clause
+         ;
 
 case_clause:
-      CASE expr_list ':' stmts
-    | CASE ':' stmts
-    ;
+           CASE expr_list ':' stmts
+           | CASE ':' stmts
+           ;
 
-expr_list:
-      expr
-    | expr_list ',' expr
-    ;
+expr_list: expr
+         | expr_list ',' expr
+         ;
 
 when_stmt:
-      WHEN expr block
-    | WHEN expr block ELSE when_stmt
-    | WHEN expr block ELSE block
-    ;
+         WHEN expr block
+         | WHEN expr block ELSE when_stmt
+         | WHEN expr block ELSE block
+         ;
 
 return_stmt:
-      RETURN
-    | RETURN expr_list
-    ;
+           RETURN
+           | RETURN expr_list
+           ;
 
-/* ================= Выражения ================= */
-expr:
-      ID
+/* ---- Выражения ---- */
+expr: ID
     | INT_LIT
     | FLOAT_LIT
     | STRING_LIT
@@ -439,15 +443,13 @@ expr:
     | TRANSMUTE '(' type_expr ')' expr %prec UNARY
     ;
 
-arg_list_op:
-      /* empty */
-    | arg_list
-    ;
+arg_list_op: /* empty */
+           | arg_list
+           ;
 
-arg_list:
-      expr
-    | arg_list ',' expr
-    ;
+arg_list: expr
+        | arg_list ',' expr
+        ;
 
 %%
 
