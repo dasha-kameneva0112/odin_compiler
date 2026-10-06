@@ -71,8 +71,7 @@ package_clause:
     | PACKAGE ID ';'
     ;
 
-import_list:
-      /* empty */
+import_list:%empty
     | import_list import_decl
     ;
 
@@ -81,8 +80,7 @@ import_decl:
     | IMPORT STRING_LIT ';'
     ;
 
-decl_list:
-      /* empty */
+decl_list:%empty
     | decl_list decl
     ;
 
@@ -108,8 +106,7 @@ proc_decl:
     | ID OP_DECL_TYPED PROC '{' id_list '}'
     ;
 
-param_list_opt:
-      /* empty */
+param_list_opt:%empty
     | param_list
     ;
 
@@ -127,8 +124,7 @@ id_list:
     | id_list ',' ID
     ;
 
-return_type:
-      /* empty */
+return_type:%empty
     | OP_ARROW type_expr
     | OP_ARROW '(' return_type_list ')'
     ;
@@ -160,7 +156,7 @@ const_decl:
    Здесь только type_core: "A :: B" (B - идентификатор) разбирается как const_decl,
    иначе ID попадал бы и в expr, и в type_expr (reduce/reduce). */
 type_decl:
-      ID OP_DECL_TYPED type_core
+      ID OP_DECL_TYPED type_expr
     ;
 
 type_expr:
@@ -184,8 +180,7 @@ type_core:
     | MATRIX '[' expr ',' expr ']' type_expr
     ;
 
-field_list_opt:
-      /* empty */
+field_list_opt:%empty
     | field_list
     ;
 
@@ -213,8 +208,7 @@ base_type:
     | STRING | CSTRING | BYTE | RUNE | RAWPTR | ANY
     ;
 
-enum_body_opt:
-      /* empty */
+enum_body_opt:%empty
     | enum_body
     ;
 
@@ -241,8 +235,7 @@ stmts:
     | stmt_list term_stmt
     ;
 
-stmt_list:
-      /* empty */
+stmt_list:%empty
     | stmt_list stmt
     ;
 
@@ -259,6 +252,8 @@ compound_stmt:
     | switch_stmt
     | when_stmt
     | label_stmt
+    | DEFER compound_stmt
+    | DIRECTIVE compound_stmt
     ;
 
 /* label: for ... ; метка - обычный ID (проверяется семантически),
@@ -283,9 +278,7 @@ term_stmt:
     | FALLTHROUGH
     | USING expr
     | DEFER term_stmt
-    | DEFER compound_stmt
     | DIRECTIVE term_stmt
-    | DIRECTIVE compound_stmt
     ;
 
 simple_stmt:
@@ -299,19 +292,27 @@ simple_stmt:
     ;
 
 assign_op:
-      OP_ADD_ASSIGN | OP_SUB_ASSIGN | OP_MUL_ASSIGN | OP_DIV_ASSIGN
-    | OP_MOD_ASSIGN | OP_MOD2_ASSIGN | OP_OR_ASSIGN | OP_NOT_ASSIGN
-    | OP_AND_ASSIGN | OP_AND_NOT_ASSIGN | OP_SHL_ASSIGN | OP_SHR_ASSIGN
-    | OP_LOG_AND_ASSIGN | OP_LOG_OR_ASSIGN
+      OP_ADD_ASSIGN 
+      | OP_SUB_ASSIGN 
+      | OP_MUL_ASSIGN 
+      | OP_DIV_ASSIGN
+      | OP_MOD_ASSIGN 
+      | OP_MOD2_ASSIGN 
+      | OP_OR_ASSIGN 
+      | OP_NOT_ASSIGN
+      | OP_AND_ASSIGN 
+      | OP_AND_NOT_ASSIGN 
+      | OP_SHL_ASSIGN 
+      | OP_SHR_ASSIGN
+      | OP_LOG_AND_ASSIGN 
+      | OP_LOG_OR_ASSIGN
     ;
 
-simple_stmt_opt:
-      /* empty */
+simple_stmt_opt:%empty
     | simple_stmt
     ;
 
-expr_opt:
-      /* empty */
+expr_opt:%empty
     | expr
     ;
 
@@ -349,8 +350,7 @@ switch_body:
       '{' case_list '}'
     ;
 
-case_list:
-      /* empty */
+case_list:%empty
     | case_list case_clause
     ;
 
@@ -439,8 +439,7 @@ expr:
     | TRANSMUTE '(' type_expr ')' expr %prec UNARY
     ;
 
-arg_list_op:
-      /* empty */
+arg_list_op:%empty
     | arg_list
     ;
 
@@ -463,6 +462,6 @@ int main(int argc, char **argv) {
     if (!yyin) { perror(argv[1]); return 1; }
     int r = yyparse();
     fclose(yyin);
-    if (r == 0) printf("OK\n");
+    if (r == 0) printf("Good\n");
     return r;
 }
