@@ -21,7 +21,7 @@ void yyerror(const char *s);
 %define parse.error verbose
 
 /* --- Ключевые слова языка --- */
-%token TRUE FALSE ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
+%token ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
 %token CONTEXT CONTINUE DEFER DISTINCT DO DYNAMIC ELSE ENUM FALLTHROUGH
 %token FOR FOREIGN IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
 %token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH TRANSMUTE
@@ -33,7 +33,7 @@ void yyerror(const char *s);
 %token QUATERNION64 QUATERNION128 QUATERNION256
 %token STRING CSTRING BYTE RUNE RAWPTR ANY
 
-%token <int_val>   INT_LIT
+%token <int_val>   INT_LIT, BOOL_LIT
 %token <float_val> FLOAT_LIT
 %token <str_val>   ID STRING_LIT RAW_STRING_LIT 
 %token <imag_val>  IMAGINARY_LIT
@@ -414,8 +414,7 @@ expr: ID
     | RUNE_LIT
     | NIL
     | UNDEFINED
-    | TRUE
-    | FALSE
+    | BOOL_LIT
     | '(' expr ')'
 
 /* ---- унарные (приоритет UNARY) ---- */

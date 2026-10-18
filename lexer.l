@@ -113,8 +113,8 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 <ST_RAW_STRING><<EOF>>              { fprintf(stderr, "Lex error: unclosed raw string\n");  BEGIN(INITIAL); return LEX_ERROR; }
 <ST_RAW_STRING>`                    { BEGIN(INITIAL); yylval.str_val = strdup(string); return RAW_STRING_LIT; }
 
-"true"                    { return TRUE; }
-"false"                   { return FALSE; }
+"true"                    { yylval.int_val = 1; return BOOL_LIT; }
+"false"                   { yylval.int_val = 0; return FALSE_LIT; }
 "asm"                     { return ASM; }
 "auto_cast"               { return AUTO_CAST; }
 "bit_field"               { return BIT_FIELD; }
@@ -338,7 +338,7 @@ static int can_end_stmt(int tok)
         case ID:
         case INT_LIT: case FLOAT_LIT: case STRING_LIT:
         case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
-        case TRUE: case FALSE: case NIL: case UNDEFINED:
+        case BOOL_LIT: case NIL: case UNDEFINED:
         case BREAK: case CONTINUE: case FALLTHROUGH:
         case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
         case ')': case ']': case '}':
