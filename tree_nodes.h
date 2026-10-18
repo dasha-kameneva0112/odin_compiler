@@ -2,6 +2,16 @@
 #define TREE_NODES_H
 
 // Узлы синтаксического дерева языка Odin 
+struct Expression;
+struct ExprList;
+struct TypeExpr;
+struct TypeList;
+struct FieldList;
+struct EnumItemList;
+struct Ident;
+struct IdList;
+struct FieldDecl;
+struct EnumItem;
 
 // Список видов выражений
 enum ExprType {
@@ -70,8 +80,6 @@ enum ExprType {
     E_TRANSMUTE        // transmute(T) x  CastType=T Left=x   
 };
 
-struct ExprList;
-
 struct Expression {
     enum ExprType Type;
 
@@ -100,6 +108,102 @@ struct Expression {
 struct ExprList {
     struct Expression *First;
     struct Expression *Last;
+};
+
+struct Ident {
+    char *Name;
+    struct Ident *Next;
+    int Line;
+};
+
+struct IdList {
+    struct Ident *First;
+    struct Ident *Last;
+};
+
+// --- Встроенные типы (правило base_type) --- 
+enum BaseType {
+    BT_BOOL, BT_B8, BT_B16, BT_B32, BT_B64,
+    BT_INT, BT_I8, BT_I16, BT_I32, BT_I64, BT_I128,
+    BT_UINT, BT_U8, BT_U16, BT_U32, BT_U64, BT_U128, BT_UINTPTR,
+    BT_F16, BT_F32, BT_F64,
+    BT_COMPLEX32, BT_COMPLEX64, BT_COMPLEX128,
+    BT_QUATERNION64, BT_QUATERNION128, BT_QUATERNION256,
+    BT_STRING, BT_CSTRING, BT_BYTE, BT_RUNE, BT_RAWPTR, BT_ANY
+};
+
+// --- Вид типа --- 
+enum TypeKind {
+    TY_NAME,        // MyType -> Name                       
+    TY_BASE,        
+    TY_SLICE,       // []T -> Elem                       
+    TY_ARRAY,       // [N]T -> Len, Elem                  
+    TY_DYN_ARRAY,   // [dynamic]T -> Elem                       
+    TY_MAP,         // map[K]V -> Key, Elem (значение V)     
+    TY_PROC,        // proc(a: int) -> int  -> Params, Results            
+    TY_STRUCT,      // struct { ... } -> Fields                     
+    TY_ENUM,        // enum { A, B = 5 } -> Items                      
+    TY_UNION,       // union { ... } -> Fields                     
+    TY_BIT_SET,     // bit_set[T] -> Elem                       
+    TY_DISTINCT,    // distinct T -> Elem                       
+    TY_MATRIX       // matrix[R, C]T -> Len (R), Cols (C), Elem    
+};
+
+struct TypeExpr {
+    enum TypeKind Kind;
+ 
+    char             *Name;      // TY_NAME 
+    enum BaseType     Base;      // TY_BASE 
+ 
+    struct TypeExpr  *Elem;      // тип, на который ссылается указатель, срез, массив и т.д. 
+    struct TypeExpr  *Key;       // TY_MAP: тип ключа 
+    struct Expression *Len;      // TY_ARRAY: длина; TY_MATRIX: число строк 
+    struct Expression *Cols;     // TY_MATRIX: число столбцов 
+ 
+    struct FieldList    *Fields; // TY_STRUCT, TY_UNION 
+    struct EnumItemList *Items;  // TY_ENUM 
+ 
+    struct FieldList *Params;    // TY_PROC: параметры 
+    struct TypeList  *Results;   // TY_PROC: возвращаемые типы; NULL, если ничего не возвращает 
+ 
+    struct TypeExpr *Next;       // следующий элемент, если тип входит в список (TypeList) 
+    int Line;
+};
+ 
+// Список типов: return_type_list -> (int, string) 
+struct TypeList {
+    struct TypeExpr *First;
+    struct TypeExpr *Last;
+};
+ 
+// --- Объявление "имена : тип" ---
+// Одна структура на три правила с одинаковой формой:
+// param (параметр процедуры), field_decl (поле struct/union)
+// и далее пригодится для объявлений переменных.
+//     a, b: int     -> Names = [a, b], Type = int                         
+struct FieldDecl {
+    struct IdList    *Names;
+    struct TypeExpr  *Type;
+    struct FieldDecl *Next;
+    int Line;
+};
+ 
+struct FieldList {
+    struct FieldDecl *First;
+    struct FieldDecl *Last;
+};
+ 
+// --- Элемент enum:  Red   или   Green = 5 --- 
+struct EnumItem {
+    char              *Name;
+    struct Expression *Value;    // NULL, если значение не задано 
+    struct EnumItem   *Next;
+    int Line;
+};
+ 
+struct EnumItemList {
+    struct EnumItem *First;
+    struct EnumItem *Last;
 };
 
 #endif // TREE_NODES_H 
