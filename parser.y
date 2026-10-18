@@ -232,6 +232,8 @@ base_type: BOOL
 /* ---- Поля enum ---- */
 enum_body_opt: %empty
              | enum_body
+             | enum_body ','
+             | enum_body ';'
              ;
 
 enum_body: enum_item
@@ -244,23 +246,20 @@ enum_item:
          ;
 
 /* ---- Блоки кода ---- */
-block: '{' stmts '}'
+block: '{' stmt_list_opt '}'
      ;
 
-/* Внутри блока: список операторов, где ПОСЛЕДНИЙ может быть term_stmt */
-stmts: stmt_list
-     | stmt_list stmt
-     ;
+/* Список операторов, ';' после последнего необязательна */
+stmt_list_opt: %empty
+             | stmt_list
+             | stmt_list ';'
+             ;
 
-stmt_list: %empty
-         | stmt_list stmt ';'
-         | stmt_list ';'              
+stmt_list: stmt
+         | stmt_list ';' stmt 
          ;
-
-/* ---- Один оператор:
-     - составной (блок, if, for, ...) — уже оканчивается '}', ';' не нужна
-     - составной с ';' — тоже допустимо
-     - term_stmt (простой) — требует ';' после себя ---- */
+             
+/* ---- Один оператор ---- */
 stmt: simple_stmt
     | block
     | if_stmt
@@ -271,7 +270,7 @@ stmt: simple_stmt
     | RETURN
     | RETURN expr_list
     | DEFER stmt
-    | DIRECTIVE stmt
+    | DIRECTIVE stmt    /* #partial switch x { ... } */
     | USING expr
     | BREAK
     | BREAK ID                        
@@ -288,34 +287,37 @@ labelable: block
          | switch_stmt
          ;
 
-/* ----------Простые операторы-выражения:
-   x = 5, x, y = 1, 2, x := 5, x: int, x: int = 5,
-   x: int : 5 (const), x += 1, f()  -------------------*/
+/* ---- Простые операторы-выражения ----
+   x = 5, 
+   x, y = 1, 2, 
+   x := 5, 
+   x: int, 
+   x: int = 5,
+   x: int : 5 (const), 
+   x += 1, 
+   f()              */
 simple_stmt: expr_list '=' expr_list
            | expr_list OP_DECL_INFERRED expr_list
+           | expr_list OP_DECL_TYPED expr_list
            | expr_list ':' type_expr
            | expr_list ':' type_expr '=' expr_list
            | expr_list ':' type_expr ':' expr_list
-           | expr assign_op expr
+           | expr OP_ADD_ASSIGN expr      /* += */
+           | expr OP_SUB_ASSIGN expr      /* -= */
+           | expr OP_MUL_ASSIGN expr      /* *= */
+           | expr OP_DIV_ASSIGN expr      /* /= */
+           | expr OP_MOD_ASSIGN expr      /* %= */
+           | expr OP_MOD2_ASSIGN expr     /* %%= */
+           | expr OP_OR_ASSIGN expr       /* |= */
+           | expr OP_NOT_ASSIGN expr      /* ~= */
+           | expr OP_AND_ASSIGN expr      /* &= */
+           | expr OP_AND_NOT_ASSIGN expr  /* &~= */
+           | expr OP_SHL_ASSIGN expr      /* <<= */
+           | expr OP_SHR_ASSIGN expr      /* >>= */
+           | expr OP_LOG_AND_ASSIGN expr  /* &&= */
+           | expr OP_LOG_OR_ASSIGN expr   /* ||= */
            | expr
            ;
-
-/* ---- Операторы составного присваивания +=, -=, *=, /= ...---- */
-assign_op:OP_ADD_ASSIGN 
-         | OP_SUB_ASSIGN 
-         | OP_MUL_ASSIGN 
-         | OP_DIV_ASSIGN
-         | OP_MOD_ASSIGN 
-         | OP_MOD2_ASSIGN 
-         | OP_OR_ASSIGN 
-         | OP_NOT_ASSIGN
-         | OP_AND_ASSIGN 
-         | OP_AND_NOT_ASSIGN 
-         | OP_SHL_ASSIGN 
-         | OP_SHR_ASSIGN
-         | OP_LOG_AND_ASSIGN 
-         | OP_LOG_OR_ASSIGN
-         ;
 
 /* ---- Необязательный простой оператор ---- */
 simple_stmt_opt: %empty
@@ -328,8 +330,10 @@ expr_opt: %empty
         ;
 
 /* ---- Условные операторы if ---- */
-/* if x > 0 { } / if x > 0 { } else { } / if x > 0 { } else if y > 0 { } else { }
-   if x := f(); x > 0 { }                                                         */
+/* if x > 0 { } 
+   if x > 0 { } else { } 
+   if x > 0 { } else if y > 0 { } else { }
+   if x := f(); x > 0 { }      */
 if_stmt: IF expr block
        | IF expr block ELSE block
        | IF expr block ELSE if_stmt
@@ -338,8 +342,12 @@ if_stmt: IF expr block
        | IF simple_stmt ';' expr block ELSE if_stmt
        ;
 
-/* for { } / for x < 10 { } / for x in arr { } / for k, v in m { }
-   for i := 0; i < n; i += 1 { } / ... do stmt                      */
+/* for { } 
+   for x < 10 { } 
+   for x in arr { } 
+   for k, v in m { }
+   for i := 0; i < n; i += 1 { } 
+   ... do stmt     */
 for_stmt: FOR block
         | FOR expr block
         | FOR expr_list IN expr block
@@ -349,7 +357,10 @@ for_stmt: FOR block
         | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO stmt
         ;
 
-/* switch x { } / switch { } / switch y := f(); y { } / switch y := f(); { } */
+/* switch x { } 
+   switch { } 
+   switch y := f(); y { } 
+   switch y := f(); { }    */
 switch_stmt: SWITCH switch_body
            | SWITCH expr switch_body
            | SWITCH simple_stmt ';' expr switch_body
@@ -366,8 +377,8 @@ case_list: %empty
          ;
 
 case_clause:
-           CASE expr_list ':' stmts
-           | CASE ':' stmts
+           CASE expr_list ':' stmt_list_opt
+           | CASE ':' stmt_list_opt
            ;
 
 /* ---- Список выражений ---- */
