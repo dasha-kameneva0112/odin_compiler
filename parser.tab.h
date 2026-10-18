@@ -188,8 +188,12 @@ union YYSTYPE
     double       float_val;  /* вещественный литерал    */
     char        *str_val;   /* ID, строки, директивы   */
     unsigned int rune_val;   /* символьный (rune) литерал */
+    struct {
+            double value;
+            char unit;
+            } imag_val;   /* 3.5i -> {3.5, 'i'} */
 
-#line 193 "parser.tab.h"
+#line 197 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

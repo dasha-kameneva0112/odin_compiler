@@ -75,8 +75,7 @@ program:
        package_clause import_list decl_list
        ;
 
-package_clause:PACKAGE ID
-              | PACKAGE ID ';'
+package_clause: PACKAGE ID ';'
               ;
 
 /* --- Список импортов --- */
@@ -84,8 +83,7 @@ import_list: %empty
            | import_list import_decl
            ;
 
-import_decl: IMPORT STRING_LIT
-           | IMPORT STRING_LIT ';'
+import_decl: IMPORT STRING_LIT ';'
            ;
 
 /* --- Список объявлений верхнего уровня --- */
@@ -93,8 +91,7 @@ decl_list: %empty
          | decl_list decl
          ;
 
-decl: decl_core
-    | decl_core ';'
+decl: decl_core ';'
     ;
 
 decl_core: proc_decl
@@ -122,7 +119,7 @@ param_list:param
           | param_list ',' param
           ;
 
-param:expr_list ':' type_expr
+param: id_list ':' type_expr
      ;
 
 /* --- Список имен --- */
@@ -192,7 +189,7 @@ field_list: field_decl
           | field_list ',' field_decl
           ;
 
-field_decl: expr_list ':' type_expr
+field_decl: id_list ':' type_expr
           ;
 
   /* ---- Объявление функций/переменных из внешних библиотек ---- */
