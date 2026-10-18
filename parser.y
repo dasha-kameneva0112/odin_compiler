@@ -11,6 +11,10 @@ void yyerror(const char *s);
     double       float_val;  /* вещественный литерал    */
     char        *str_val;   /* ID, строки, директивы   */
     unsigned int rune_val;   /* символьный (rune) литерал */
+    struct {
+            double value;
+            char unit;
+            } imag_val;   /* 3.5i -> {3.5, 'i'} */
 }
 
 %locations
@@ -31,7 +35,8 @@ void yyerror(const char *s);
 
 %token <int_val>   INT_LIT
 %token <float_val> FLOAT_LIT
-%token <str_val>   ID STRING_LIT RAW_STRING_LIT IMAGINARY_LIT
+%token <str_val>   ID STRING_LIT RAW_STRING_LIT 
+%token <imag_val>  IMAGINARY_LIT
 %token <rune_val>  RUNE_LIT
 %token NIL UNDEFINED
 

@@ -167,7 +167,12 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0|[1-9](_?{DIGIT})*              { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
 
 {FLOAT_LIT}                        { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
-({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { yylval.str_val = strdup(yytext); return IMAGINARY_LIT; }
+({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; 
+                                     strip_us(yytext, c); 
+                                     yylval.imag_val.unit  = c[strlen(c) - 1];      /* 'i', 'j' или 'k' */
+                                     c[strlen(c) - 1] = '\0';
+                                     yylval.imag_val.value = strtod(c, NULL);
+                                     return IMAGINARY_LIT; }
 
 "&&="       { return OP_LOG_AND_ASSIGN; }
 "||="       { return OP_LOG_OR_ASSIGN; }
