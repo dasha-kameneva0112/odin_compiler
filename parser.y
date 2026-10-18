@@ -33,7 +33,7 @@ void yyerror(const char *s);
 %token QUATERNION64 QUATERNION128 QUATERNION256
 %token STRING CSTRING BYTE RUNE RAWPTR ANY
 
-%token <int_val>   INT_LIT, BOOL_LIT
+%token <int_val>   INT_LIT BOOL_LIT
 %token <float_val> FLOAT_LIT
 %token <str_val>   ID STRING_LIT RAW_STRING_LIT 
 %token <imag_val>  IMAGINARY_LIT
@@ -97,7 +97,6 @@ decl: decl_core ';'
 decl_core: proc_decl
          | var_decl
          | const_decl
-         | type_decl
          | foreign_decl
          | attribute decl_core
          ;
@@ -146,18 +145,15 @@ var_decl:id_list ':' type_expr '=' expr_list
         ;
 
 /* ---- Константа ----   
-  MAX :: 100 
+  MAX   :: 100
+  NAME  :: "hello"
+  MyMyInt :: MyInt
   MAX: int : 100   
   C, D, E: f32 : 1.0, 2.0, 3.0    */
 const_decl:ID OP_DECL_TYPED expr 
+          | ID OP_DECL_TYPED type_core
           | id_list  ':' type_expr ':' expr_list
           ;
-
-/* ---- Объявление типа ----
-   MyInt :: int
-   Point :: struct { x, y: int } */
-type_decl: ID OP_DECL_TYPED type_expr
-         ;
 
 /* --- Тип - имя или составной --- */
 type_expr:ID
