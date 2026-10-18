@@ -335,12 +335,23 @@ static int last_token = 0;
 static int can_end_stmt(int tok)
 {
     switch (tok) {
-        case ID:
+        case ID: 
+        case CONTEXT: 
+        case TYPEID:
         case INT_LIT: case FLOAT_LIT: case STRING_LIT:
         case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
         case BOOL_LIT: case NIL: case UNDEFINED:
         case BREAK: case CONTINUE: case FALLTHROUGH:
         case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
+        case BOOL: case B8: case B16: case B32: case B64:
+        case INT: case I8: case I16: case I32: case I64: case I128:
+        case UINT: case U8: case U16: case U32: case U64: case U128: case UINTPTR:
+        case F16: case F32: case F64:
+        case COMPLEX32: case COMPLEX64: case COMPLEX128:
+        case QUATERNION64: case QUATERNION128: case QUATERNION256:
+        case STRING: case CSTRING: case BYTE: case RUNE: case RAWPTR: case ANY:
+        case BUILD_DIRECTIVE:
+        case '^': case '?':
         case ')': case ']': case '}':
             return 1;
         default:
@@ -350,6 +361,9 @@ static int can_end_stmt(int tok)
 
 int yylex(void)
 {
+    static int at_eof = 0;
+    if (at_eof) return 0;
+
     for (;;) {
         int tok = odin_lex();
         if (tok == '\n') {      /* решаем, вставить ; или пропустить */
@@ -360,7 +374,16 @@ int yylex(void)
             continue;
         }
 
-        if (tok != 0) last_token = tok;
+        if (tok == 0) { /* конец файла: как и перевод строки, может завершать оператор */
+            at_eof = 1;
+            if (can_end_stmt(last_token)) {
+                last_token = ';';
+                return ';';
+            }
+            return 0;
+        }
+
+        last_token = tok;
         return tok;
     }
 }
