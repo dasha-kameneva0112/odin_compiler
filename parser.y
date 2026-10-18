@@ -6,6 +6,10 @@ int yylex(void);
 void yyerror(const char *s);
 %}
 
+%code requires {
+    #include "tree_nodes.h"
+}
+
 %union {
     long long    int_val;  /* целочисленный литерал   */
     double       float_val;  /* вещественный литерал    */
@@ -15,6 +19,17 @@ void yyerror(const char *s);
             double value;
             char unit;
             } imag_val;   /* 3.5i -> {3.5, 'i'} */
+
+ /* Узлы синтаксического дерева */
+    struct Expression  *expr;                       /* Указатель на выражение */
+    struct ExprList    *expr_list;                  /* Список выражений */
+    struct TypeExpr    *type_expr;                  /* Указатель на описание типа */
+    struct IdList      *id_list;                    /* Cписок имен */
+    struct FieldDecl   *field_decl;                 /* Одно объявление полей или параметров */
+    struct FieldList   *field_list;                 /* Список таких объявлений */
+    struct TypeList    *type_list;                  /* Список типов */
+    struct EnumItem    *enum_item;                  /* Один элемент enum */
+    struct EnumItemList *enum_item_list;            /* Список элементов enum */
 }
 
 %locations
