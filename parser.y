@@ -276,7 +276,6 @@ stmt: simple_stmt
     | BREAK ID                        
     | CONTINUE
     | CONTINUE ID                       
-    | FALLTHROUGH
     ;
 
 /* ---- Метка ---- */
@@ -377,9 +376,18 @@ case_list: %empty
          ;
 
 case_clause:
-           CASE expr_list ':' stmt_list_opt
-           | CASE ':' stmt_list_opt
+           CASE expr_list ':' case_body
+           | CASE ':' case_body
            ;
+
+case_body: stmt_list_opt
+         | fall_tail
+         | stmt_list ';' fall_tail
+         ;
+
+fall_tail: FALLTHROUGH
+         | FALLTHROUGH ';' 
+         ;
 
 /* ---- Список выражений ---- */
 expr_list: expr
