@@ -184,10 +184,10 @@ union YYSTYPE
 {
 #line 9 "parser.y"
 
-    long long    int_val;
-    double       float_val;
-    char        *str_val;
-    unsigned int rune_val;
+    long long    int_val;  /* целочисленный литерал   */
+    double       float_val;  /* вещественный литерал    */
+    char        *str_val;   /* ID, строки, директивы   */
+    unsigned int rune_val;   /* символьный (rune) литерал */
 
 #line 193 "parser.tab.h"
 

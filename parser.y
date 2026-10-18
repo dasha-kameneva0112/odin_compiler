@@ -97,6 +97,7 @@ decl_core: proc_decl
          | const_decl
          | type_decl
          | foreign_decl
+         | attribute decl_core
          ;
 
 /* ---- Процедура ----
@@ -134,8 +135,9 @@ return_type_list:type_expr
                 | return_type_list ',' type_expr
                 ;
 
-/* ---- Переменные и типизированные константы (общий префикс id_list ':') ----
-  x: int = 5   x: int   x := 5   x, y := 1, 2   MAX: int : 100 *           /
+/* ---- Переменные и типизированные константы (общий префикс id_
+list ':') ----
+  x: int = 5   x: int   x := 5   x, y := 1, 2   MAX: int : 100 */
 var_decl:id_list ':' type_expr '=' expr_list 
         | id_list ':' type_expr
         | id_list OP_DECL_INFERRED expr_list
@@ -152,7 +154,7 @@ const_decl:ID OP_DECL_TYPED expr
 /* ---- Объявление типа ----
    MyInt :: int
    Point :: struct { x, y: int } */
-type_decl:ID OP_DECL_TYPED type_expr
+type_decl: ID OP_DECL_TYPED type_expr
          ;
 
 /* --- Тип - имя или составной --- */
@@ -249,55 +251,43 @@ block: '{' stmts '}'
 
 /* Внутри блока: список операторов, где ПОСЛЕДНИЙ может быть term_stmt */
 stmts: stmt_list
-      | stmt_list term_stmt
-      ;
+     | stmt_list stmt
+     ;
 
-/* Список операторов с обязательной ';' после каждого term_stmt */
 stmt_list: %empty
-         | stmt_list stmt
+         | stmt_list stmt ';'
+         | stmt_list ';'              
          ;
 
 /* ---- Один оператор:
      - составной (блок, if, for, ...) — уже оканчивается '}', ';' не нужна
      - составной с ';' — тоже допустимо
      - term_stmt (простой) — требует ';' после себя ---- */
-stmt:compound_stmt
-    | compound_stmt ';'
-    | term_stmt ';'
+stmt: simple_stmt
+    | block
+    | if_stmt
+    | for_stmt
+    | switch_stmt
+    | when_stmt
+    | expr_list ':' labelable           
+    | RETURN
+    | RETURN expr_list
+    | DEFER stmt
+    | DIRECTIVE stmt
+    | USING expr
+    | BREAK
+    | BREAK ID                        
+    | CONTINUE
+    | CONTINUE ID                       
+    | FALLTHROUGH
     ;
 
-/* ---- Составные операторы — не требуют ';' после себя ---- */
-compound_stmt: block
-             | if_stmt
-             | for_stmt
-             | switch_stmt
-             | when_stmt
-             | label_stmt
-             | DEFER compound_stmt
-             | DIRECTIVE compound_stmt
-             ;
-
 /* ---- Метка ---- */
-label_stmt:expr_list ':' labe_lable_stmt
-          ;
-
-/*---- На что можно навесить метку ----*/
-labe_lable_stmt: block
-               | if_stmt
-               | for_stmt
-               | switch_stmt
-               ;
-
-/* --------Простые операторы — требуют ';' после себя -------*/
-term_stmt:simple_stmt
-         | for_do_stmt
-         | return_stmt
-         | BREAK
-         | CONTINUE
-         | FALLTHROUGH    
-         | USING expr
-         | DEFER term_stmt
-         | DIRECTIVE term_stmt
+/* На что можно навесить метку */
+labelable: block
+         | if_stmt
+         | for_stmt
+         | switch_stmt
          ;
 
 /* ----------Простые операторы-выражения:
@@ -340,8 +330,9 @@ expr_opt: %empty
         ;
 
 /* ---- Условные операторы if ---- */
-if_stmt:
-       IF expr block
+/* if x > 0 { } / if x > 0 { } else { } / if x > 0 { } else if y > 0 { } else { }
+   if x := f(); x > 0 { }                                                         */
+if_stmt: IF expr block
        | IF expr block ELSE block
        | IF expr block ELSE if_stmt
        | IF simple_stmt ';' expr block
@@ -349,24 +340,19 @@ if_stmt:
        | IF simple_stmt ';' expr block ELSE if_stmt
        ;
 
-/* ---- Циклы for ---- */
-for_stmt:
-        FOR block
+/* for { } / for x < 10 { } / for x in arr { } / for k, v in m { }
+   for i := 0; i < n; i += 1 { } / ... do stmt                      */
+for_stmt: FOR block
         | FOR expr block
         | FOR expr_list IN expr block
         | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt block
+        | FOR expr DO stmt
+        | FOR expr_list IN expr DO stmt
+        | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO stmt
         ;
 
-/* ---- Циклы for с оператором DO ---- */
-for_do_stmt:
-           FOR expr DO term_stmt    
-           | FOR expr_list IN expr DO term_stmt
-           | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO term_stmt
-           ;
-
-/* ---- Операторы выбора switch ---- */
-switch_stmt:
-           SWITCH switch_body
+/* switch x { } / switch { } / switch y := f(); y { } / switch y := f(); { } */
+switch_stmt: SWITCH switch_body
            | SWITCH expr switch_body
            | SWITCH simple_stmt ';' expr switch_body
            | SWITCH simple_stmt ';' switch_body
@@ -398,11 +384,20 @@ when_stmt:
          | WHEN expr block ELSE block
          ;
 
-/* ---- Оператор возврата return ---- */
-return_stmt:
-           RETURN
-           | RETURN expr_list
-           ;
+/* ---- Атрибут  @private (одно слово — токен ATTRIBUTE)
+  @(link_name="foo", export)  ---- */
+attribute: ATTRIBUTE 
+         | AT ID
+         | AT ID '(' attr_list ')'
+         ;
+
+attr_list: attr
+         | attr_list ',' attr
+         ;
+
+attr: ID
+    | ID '=' expr
+    ;
 
 /* ---- Выражения ---- */
 expr: ID
