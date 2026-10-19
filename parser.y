@@ -39,7 +39,7 @@ void yyerror(const char *s);
 %token ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
 %token CONTEXT CONTINUE DEFER DISTINCT DO DYNAMIC ELSE ENUM FALLTHROUGH
 %token FOR FOREIGN IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
-%token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH TRANSMUTE
+%token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH
 %token TYPEID UNION USING WHEN WHERE
 
 %token BOOL B8 B16 B32 B64 INT I8 I16 I32 I64 I128
@@ -498,7 +498,6 @@ expr: ID
 
 /* ---- приведение типа ---- */
     | CAST '(' type_expr ')' expr %prec UNARY
-    | TRANSMUTE '(' type_expr ')' expr %prec UNARY
     ;
 
 /* ---- аргументы вызова функции ---- */

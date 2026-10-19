@@ -148,7 +148,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "return"                  { return RETURN; }
 "struct"                  { return STRUCT; }
 "switch"                  { return SWITCH; }
-"transmute"               { return TRANSMUTE; }
 "typeid"                  { return TYPEID; }
 "union"                   { return UNION; }
 "using"                   { return USING; }
