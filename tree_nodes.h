@@ -16,6 +16,13 @@ struct Statement;
 struct StmtList;
 struct CaseClause;
 struct CaseList;
+struct Decl;
+struct DeclList;
+struct Attribute;
+struct AttrList;
+struct Import;
+struct ImportList;
+
 
 #pragma region ВЫРАЖЕНИЯ
 // Список видов выражений
@@ -28,7 +35,7 @@ enum ExprType {
     E_STRING,          // "abc" -> Str
     E_RAW_STRING,      // `abc` -> Str 
     E_IMAG,            // 3.5i -> FloatVal + ImagUnit 
-    E_RUNE,            // 'a' -> RuneVal 
+    E_RUNE,            // a -> RuneVal 
     E_BOOL,            // true / false -> IntVal (0 или 1) 
     E_NIL,             //  nil                        
     E_UNDEF,           //  ---    
@@ -115,18 +122,18 @@ enum TypeKind {
 };
 
 struct Expression {
-    enum ExprType Type; // что за вид выражения
+    enum ExprType Type;  // что за вид выражения
 
     // значения листьев 
     long long     IntVal;      
     double        FloatVal;     
-    char          ImagUnit;    // 'i', 'j' или 'k' для E_IMAG 
+    char          ImagUnit;    // i, j или k для E_IMAG 
     unsigned int  RuneVal;     // E_RUNE 
     char         *Str;         
 
     // операнды 
-    struct Expression *Left;   // указатель на левого "ребёнка"
-    struct Expression *Right;  // указатель на правого "ребёнка"
+    struct Expression *Left;   // указатель на левого "ребенка"
+    struct Expression *Right;  // указатель на правого "ребенка"
     struct Expression *Cond;   // условие для тернарной формы, тк надо 3 части  
 
     struct TypeExpr   *CastType;  // cast(T) x: тип лежит в CastType, а x в Left 
@@ -272,11 +279,11 @@ struct Statement {
  
     struct Expression *Expr;      
  
-    struct ExprList   *Lhs;       // слева от =, :=, ::, ':' (левая часть присваивания)
+    struct ExprList   *Lhs;       // слева от =, :=, ::, : (левая часть присваивания)
     struct ExprList   *Rhs;       // справа от =, :=, :: ; значения в return / NULL (правая часть присваивания)
     enum AssignOp      Op;        // ST_OP_ASSIGN: какой знак
  
-    struct TypeExpr   *DeclType;  // тип после ':' / NULL
+    struct TypeExpr   *DeclType;  // тип после : / NULL
     int                IsConst;   // 1 для констант (::), 0 для переменных
  
     struct StmtList   *Block;     // тело - ST_BLOCK, ST_IF...
@@ -284,9 +291,9 @@ struct Statement {
     char              *Label;     // имя метки у ST_BREAK, ST_CONTINUE, ST_LABELED
     
     // части if / for / switch
-    struct Statement  *Init;       // оператор до ';'
+    struct Statement  *Init;       // оператор до ;
     struct Expression *Cond;       // условие
-    struct Statement  *Post;       // оператор после второго ';' 
+    struct Statement  *Post;       // оператор после второго ; 
     struct Statement  *ElseBranch; // что после else (else {..}) 
     struct CaseList   *Cases;      // ветки switch
     char              *Directive;  // ST_DIRECTIVE: текст директивы
@@ -300,6 +307,82 @@ struct StmtList {
     struct Statement *First;
     struct Statement *Last;
 };
+#pragma endregion
+
+
+#pragma region ВЕРХНИЙ УРОВЕНЬ
+ 
+// Атрибут:  @private   или   @(link_name="foo", export)
+// Это один атрибут 
+struct Attribute {
+    char              *Name;    // "private" / "link_name" / "export"
+    struct Expression *Value;   // значение после = / NULL, если его нет
+    struct Attribute  *Next;
+    int Line;
+};
+ 
+struct AttrList {
+    struct Attribute *First;
+    struct Attribute *Last;
+};
+ 
+// Вид объявлений верхнего уровня
+enum DeclKind {
+    D_PROC,            // main :: proc(a: int) -> int { ... }    Name, Params, Results, Body
+    D_PROC_GROUP,      // foo :: proc { foo_int, foo_str }       Name, Group
+    D_VAR,             // x: int = 5 / x: int / x := 5           Names, DeclType, Values
+    D_CONST,           // MAX :: 100 / MAX: int : 100            Names, DeclType, Values
+                       // MyType :: struct { ... }               Names, ValueType
+    D_FOREIGN_IMPORT,  // foreign import lib "lib.lib"           Name, Path
+    D_FOREIGN_BLOCK    // foreign { ... }                        Body
+};
+
+// объявление верхнего уровня
+struct Decl {
+    enum DeclKind Kind; // вид объявления
+ 
+    char             *Name;         
+    struct IdList    *Names;        
+ 
+    struct TypeExpr  *DeclType;     // тип после : / NULL, если не написан
+    struct ExprList  *Values;       // значения справа / NULL, если их нет
+    struct TypeExpr  *ValueType;    // справа стоит ТИП (MyType :: struct {..}), а не выражение
+ 
+    struct FieldList *Params;       // параметры
+    struct TypeList  *Results;      // что возвращает / NULL, если ничего
+    struct StmtList  *Body;         // тело процедуры / содержимое блока
+    struct IdList    *Group;        // список имен в { ... }
+    char             *Path;         // строка с путем
+    struct AttrList  *Attrs;        // атрибуты перед объявлением / NULL, если их нет
+ 
+    struct Decl      *Next;
+    int Line;
+};
+ 
+struct DeclList {
+    struct Decl *First;
+    struct Decl *Last;
+};
+ 
+// import "core:fmt"
+struct Import {
+    char          *Path;  // "core:fmt"
+    struct Import *Next;
+    int Line;
+};
+ 
+struct ImportList {
+    struct Import *First;
+    struct Import *Last;
+};
+ 
+// Вся программа: корень дерева (на него будет указывать root)
+struct Program {
+    char              *PackageName;  // package main -> "main"
+    struct ImportList *Imports;      // все import (список может быть пустым)
+    struct DeclList   *Decls;        // все объявления верхнего уровня
+};
+ 
 #pragma endregion
 
 #endif 
