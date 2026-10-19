@@ -44,6 +44,12 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 9 "parser.y"
+
+    #include "tree_nodes.h"
+
+#line 53 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -87,92 +93,91 @@ extern int yydebug;
     RETURN = 288,                  /* RETURN  */
     STRUCT = 289,                  /* STRUCT  */
     SWITCH = 290,                  /* SWITCH  */
-    TRANSMUTE = 291,               /* TRANSMUTE  */
-    TYPEID = 292,                  /* TYPEID  */
-    UNION = 293,                   /* UNION  */
-    USING = 294,                   /* USING  */
-    WHEN = 295,                    /* WHEN  */
-    WHERE = 296,                   /* WHERE  */
-    BOOL = 297,                    /* BOOL  */
-    B8 = 298,                      /* B8  */
-    B16 = 299,                     /* B16  */
-    B32 = 300,                     /* B32  */
-    B64 = 301,                     /* B64  */
-    INT = 302,                     /* INT  */
-    I8 = 303,                      /* I8  */
-    I16 = 304,                     /* I16  */
-    I32 = 305,                     /* I32  */
-    I64 = 306,                     /* I64  */
-    I128 = 307,                    /* I128  */
-    UINT = 308,                    /* UINT  */
-    U8 = 309,                      /* U8  */
-    U16 = 310,                     /* U16  */
-    U32 = 311,                     /* U32  */
-    U64 = 312,                     /* U64  */
-    U128 = 313,                    /* U128  */
-    UINTPTR = 314,                 /* UINTPTR  */
-    F16 = 315,                     /* F16  */
-    F32 = 316,                     /* F32  */
-    F64 = 317,                     /* F64  */
-    COMPLEX32 = 318,               /* COMPLEX32  */
-    COMPLEX64 = 319,               /* COMPLEX64  */
-    COMPLEX128 = 320,              /* COMPLEX128  */
-    QUATERNION64 = 321,            /* QUATERNION64  */
-    QUATERNION128 = 322,           /* QUATERNION128  */
-    QUATERNION256 = 323,           /* QUATERNION256  */
-    STRING = 324,                  /* STRING  */
-    CSTRING = 325,                 /* CSTRING  */
-    BYTE = 326,                    /* BYTE  */
-    RUNE = 327,                    /* RUNE  */
-    RAWPTR = 328,                  /* RAWPTR  */
-    ANY = 329,                     /* ANY  */
-    INT_LIT = 330,                 /* INT_LIT  */
-    BOOL_LIT = 331,                /* BOOL_LIT  */
-    FLOAT_LIT = 332,               /* FLOAT_LIT  */
-    ID = 333,                      /* ID  */
-    STRING_LIT = 334,              /* STRING_LIT  */
-    RAW_STRING_LIT = 335,          /* RAW_STRING_LIT  */
-    IMAGINARY_LIT = 336,           /* IMAGINARY_LIT  */
-    RUNE_LIT = 337,                /* RUNE_LIT  */
-    NIL = 338,                     /* NIL  */
-    UNDEFINED = 339,               /* UNDEFINED  */
-    ATTRIBUTE = 340,               /* ATTRIBUTE  */
-    BUILD_DIRECTIVE = 341,         /* BUILD_DIRECTIVE  */
-    DIRECTIVE = 342,               /* DIRECTIVE  */
-    AT = 343,                      /* AT  */
-    OP_ADD_ASSIGN = 344,           /* OP_ADD_ASSIGN  */
-    OP_SUB_ASSIGN = 345,           /* OP_SUB_ASSIGN  */
-    OP_MUL_ASSIGN = 346,           /* OP_MUL_ASSIGN  */
-    OP_DIV_ASSIGN = 347,           /* OP_DIV_ASSIGN  */
-    OP_MOD_ASSIGN = 348,           /* OP_MOD_ASSIGN  */
-    OP_MOD2_ASSIGN = 349,          /* OP_MOD2_ASSIGN  */
-    OP_OR_ASSIGN = 350,            /* OP_OR_ASSIGN  */
-    OP_NOT_ASSIGN = 351,           /* OP_NOT_ASSIGN  */
-    OP_AND_ASSIGN = 352,           /* OP_AND_ASSIGN  */
-    OP_AND_NOT_ASSIGN = 353,       /* OP_AND_NOT_ASSIGN  */
-    OP_SHL_ASSIGN = 354,           /* OP_SHL_ASSIGN  */
-    OP_SHR_ASSIGN = 355,           /* OP_SHR_ASSIGN  */
-    OP_LOG_AND_ASSIGN = 356,       /* OP_LOG_AND_ASSIGN  */
-    OP_LOG_OR_ASSIGN = 357,        /* OP_LOG_OR_ASSIGN  */
-    OP_LOG_AND = 358,              /* OP_LOG_AND  */
-    OP_LOG_OR = 359,               /* OP_LOG_OR  */
-    OP_AND_NOT = 360,              /* OP_AND_NOT  */
-    OP_SHL = 361,                  /* OP_SHL  */
-    OP_SHR = 362,                  /* OP_SHR  */
-    OP_EQ = 363,                   /* OP_EQ  */
-    OP_NE = 364,                   /* OP_NE  */
-    OP_LE = 365,                   /* OP_LE  */
-    OP_GE = 366,                   /* OP_GE  */
-    OP_RANGE = 367,                /* OP_RANGE  */
-    OP_RANGE_INCLUSIVE = 368,      /* OP_RANGE_INCLUSIVE  */
-    OP_RANGE_EXCLUSIVE = 369,      /* OP_RANGE_EXCLUSIVE  */
-    OP_ARROW = 370,                /* OP_ARROW  */
-    OP_DECL_TYPED = 371,           /* OP_DECL_TYPED  */
-    OP_DECL_INFERRED = 372,        /* OP_DECL_INFERRED  */
-    OP_MOD2 = 373,                 /* OP_MOD2  */
-    OP_DOLLAR = 374,               /* OP_DOLLAR  */
-    LEX_ERROR = 375,               /* LEX_ERROR  */
-    UNARY = 376                    /* UNARY  */
+    TYPEID = 291,                  /* TYPEID  */
+    UNION = 292,                   /* UNION  */
+    USING = 293,                   /* USING  */
+    WHEN = 294,                    /* WHEN  */
+    WHERE = 295,                   /* WHERE  */
+    BOOL = 296,                    /* BOOL  */
+    B8 = 297,                      /* B8  */
+    B16 = 298,                     /* B16  */
+    B32 = 299,                     /* B32  */
+    B64 = 300,                     /* B64  */
+    INT = 301,                     /* INT  */
+    I8 = 302,                      /* I8  */
+    I16 = 303,                     /* I16  */
+    I32 = 304,                     /* I32  */
+    I64 = 305,                     /* I64  */
+    I128 = 306,                    /* I128  */
+    UINT = 307,                    /* UINT  */
+    U8 = 308,                      /* U8  */
+    U16 = 309,                     /* U16  */
+    U32 = 310,                     /* U32  */
+    U64 = 311,                     /* U64  */
+    U128 = 312,                    /* U128  */
+    UINTPTR = 313,                 /* UINTPTR  */
+    F16 = 314,                     /* F16  */
+    F32 = 315,                     /* F32  */
+    F64 = 316,                     /* F64  */
+    COMPLEX32 = 317,               /* COMPLEX32  */
+    COMPLEX64 = 318,               /* COMPLEX64  */
+    COMPLEX128 = 319,              /* COMPLEX128  */
+    QUATERNION64 = 320,            /* QUATERNION64  */
+    QUATERNION128 = 321,           /* QUATERNION128  */
+    QUATERNION256 = 322,           /* QUATERNION256  */
+    STRING = 323,                  /* STRING  */
+    CSTRING = 324,                 /* CSTRING  */
+    BYTE = 325,                    /* BYTE  */
+    RUNE = 326,                    /* RUNE  */
+    RAWPTR = 327,                  /* RAWPTR  */
+    ANY = 328,                     /* ANY  */
+    INT_LIT = 329,                 /* INT_LIT  */
+    BOOL_LIT = 330,                /* BOOL_LIT  */
+    FLOAT_LIT = 331,               /* FLOAT_LIT  */
+    ID = 332,                      /* ID  */
+    STRING_LIT = 333,              /* STRING_LIT  */
+    RAW_STRING_LIT = 334,          /* RAW_STRING_LIT  */
+    IMAGINARY_LIT = 335,           /* IMAGINARY_LIT  */
+    RUNE_LIT = 336,                /* RUNE_LIT  */
+    NIL = 337,                     /* NIL  */
+    UNDEFINED = 338,               /* UNDEFINED  */
+    ATTRIBUTE = 339,               /* ATTRIBUTE  */
+    BUILD_DIRECTIVE = 340,         /* BUILD_DIRECTIVE  */
+    DIRECTIVE = 341,               /* DIRECTIVE  */
+    AT = 342,                      /* AT  */
+    OP_ADD_ASSIGN = 343,           /* OP_ADD_ASSIGN  */
+    OP_SUB_ASSIGN = 344,           /* OP_SUB_ASSIGN  */
+    OP_MUL_ASSIGN = 345,           /* OP_MUL_ASSIGN  */
+    OP_DIV_ASSIGN = 346,           /* OP_DIV_ASSIGN  */
+    OP_MOD_ASSIGN = 347,           /* OP_MOD_ASSIGN  */
+    OP_MOD2_ASSIGN = 348,          /* OP_MOD2_ASSIGN  */
+    OP_OR_ASSIGN = 349,            /* OP_OR_ASSIGN  */
+    OP_NOT_ASSIGN = 350,           /* OP_NOT_ASSIGN  */
+    OP_AND_ASSIGN = 351,           /* OP_AND_ASSIGN  */
+    OP_AND_NOT_ASSIGN = 352,       /* OP_AND_NOT_ASSIGN  */
+    OP_SHL_ASSIGN = 353,           /* OP_SHL_ASSIGN  */
+    OP_SHR_ASSIGN = 354,           /* OP_SHR_ASSIGN  */
+    OP_LOG_AND_ASSIGN = 355,       /* OP_LOG_AND_ASSIGN  */
+    OP_LOG_OR_ASSIGN = 356,        /* OP_LOG_OR_ASSIGN  */
+    OP_LOG_AND = 357,              /* OP_LOG_AND  */
+    OP_LOG_OR = 358,               /* OP_LOG_OR  */
+    OP_AND_NOT = 359,              /* OP_AND_NOT  */
+    OP_SHL = 360,                  /* OP_SHL  */
+    OP_SHR = 361,                  /* OP_SHR  */
+    OP_EQ = 362,                   /* OP_EQ  */
+    OP_NE = 363,                   /* OP_NE  */
+    OP_LE = 364,                   /* OP_LE  */
+    OP_GE = 365,                   /* OP_GE  */
+    OP_RANGE = 366,                /* OP_RANGE  */
+    OP_RANGE_INCLUSIVE = 367,      /* OP_RANGE_INCLUSIVE  */
+    OP_RANGE_EXCLUSIVE = 368,      /* OP_RANGE_EXCLUSIVE  */
+    OP_ARROW = 369,                /* OP_ARROW  */
+    OP_DECL_TYPED = 370,           /* OP_DECL_TYPED  */
+    OP_DECL_INFERRED = 371,        /* OP_DECL_INFERRED  */
+    OP_MOD2 = 372,                 /* OP_MOD2  */
+    OP_DOLLAR = 373,               /* OP_DOLLAR  */
+    LEX_ERROR = 374,               /* LEX_ERROR  */
+    UNARY = 375                    /* UNARY  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -181,7 +186,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 9 "parser.y"
+#line 13 "parser.y"
 
     long long    int_val;  /* целочисленный литерал   */
     double       float_val;  /* вещественный литерал    */
@@ -192,7 +197,18 @@ union YYSTYPE
             char unit;
             } imag_val;   /* 3.5i -> {3.5, 'i'} */
 
-#line 196 "parser.tab.h"
+ /* Узлы синтаксического дерева */
+    struct Expression  *expr_node;                       /* Указатель на выражение */
+    struct ExprList    *expr_list_node;                  /* Список выражений */
+    struct TypeExpr    *type_expr_node;                  /* Указатель на описание типа */
+    struct IdList      *id_list_node;                    /* Cписок имен */
+    struct FieldDecl   *field_decl_node;                 /* Одно объявление полей или параметров */
+    struct FieldList   *field_list_node;                 /* Список таких объявлений */
+    struct TypeList    *type_list_node;                  /* Список типов */
+    struct EnumItem    *enum_item_node;                  /* Один элемент enum */
+    struct EnumItemList *enum_item_list_node;            /* Список элементов enum */
+
+#line 212 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

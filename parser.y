@@ -21,16 +21,23 @@ void yyerror(const char *s);
             } imag_val;   /* 3.5i -> {3.5, 'i'} */
 
  /* Узлы синтаксического дерева */
-    struct Expression  *expr;                       /* Указатель на выражение */
-    struct ExprList    *expr_list;                  /* Список выражений */
-    struct TypeExpr    *type_expr;                  /* Указатель на описание типа */
-    struct IdList      *id_list;                    /* Cписок имен */
-    struct FieldDecl   *field_decl;                 /* Одно объявление полей или параметров */
-    struct FieldList   *field_list;                 /* Список таких объявлений */
-    struct TypeList    *type_list;                  /* Список типов */
-    struct EnumItem    *enum_item;                  /* Один элемент enum */
-    struct EnumItemList *enum_item_list;            /* Список элементов enum */
+    struct Expression  *expr_node;                       /* Указатель на выражение */
+    struct ExprList    *expr_list_node;                  /* Список выражений */
+    struct TypeExpr    *type_expr_node;                  /* Указатель на описание типа */
+    struct IdList      *id_list_node;                    /* Cписок имен */
+    struct FieldDecl   *field_decl_node;                 /* Одно объявление полей или параметров */
+    struct FieldList   *field_list_node;                 /* Список таких объявлений */
+    struct TypeList    *type_list_node;                  /* Список типов */
+    struct EnumItem    *enum_item_node;                  /* Один элемент enum */
+    struct EnumItemList *enum_item_list_node;            /* Список элементов enum */
 }
+
+
+%code {
+        #include "tree_build.h"
+}
+
+
 
 %locations
 %define parse.error verbose
@@ -68,6 +75,11 @@ void yyerror(const char *s);
 %token OP_ARROW OP_DECL_TYPED OP_DECL_INFERRED OP_MOD2 OP_DOLLAR
 
 %token LEX_ERROR
+
+/* --- Нетерминалы--- */
+%type <expr_node> expr            /* --- Expression *--- */
+%type <expr_list_node> expr_list arg_list arg_list_op    /* --- ExprList *--- */
+%type <id_list_node> id_list
 
 /* --- Приоритеты и ассоциативность --- */
 %right '?' IF WHEN
@@ -137,8 +149,9 @@ param: id_list ':' type_expr
      ;
 
 /* --- Список имен --- */
-id_list: ID
-       | id_list ',' ID
+                                    /* @1.first_line — строка именно этого токена (в отличие от @$, который относится ко всему правилу). */
+id_list: ID                         { $$ = idlist_new($1, @1.first_line); }
+       | id_list ',' ID             { $$ = idlist_append($1, $3, @3.first_line); }
        ;
        
 /* --- Тип возвращаемого значения --- */
@@ -194,6 +207,8 @@ type_core:base_type
 /* ---- Поля структуры ---- */
 field_list_opt: %empty
               | field_list
+              | field_list ','
+              | field_list ';'
               ;
 
 field_list: field_decl
