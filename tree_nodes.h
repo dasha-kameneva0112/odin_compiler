@@ -12,7 +12,12 @@ struct Ident;
 struct IdList;
 struct FieldDecl;
 struct EnumItem;
+struct Statement;
+struct StmtList;
+struct CaseClause;
+struct CaseList;
 
+#pragma region ВЫРАЖЕНИЯ
 // Список видов выражений
 enum ExprType {
     // виды делятся на 3 группы: 
@@ -194,7 +199,6 @@ struct FieldDecl {
     int Line;
 };
  
-// это список полей
 struct FieldList {
     struct FieldDecl *First;
     struct FieldDecl *Last;
@@ -213,5 +217,89 @@ struct EnumItemList {
     struct EnumItem *First;
     struct EnumItem *Last;
 };
+#pragma endregion
+
+
+#pragma region ОПЕРАТОРЫ
+
+// вид оператора
+enum StmtKind {
+    ST_EXPR,        // f() - Expr=f()
+    ST_ASSIGN,      // a, b = 1, 2 - Lhs=a,b  Rhs=1,2
+    ST_OP_ASSIGN,   // x += 1 - Lhs=x (один элемент)  Rhs=1 (один элемент)  Op=AOP_ADD
+    ST_DECL,        // x := 5 / x: int = 5 / x: int / x :: 5 / x: int : 5
+    ST_BLOCK,       // { ... } - Block=список операторов
+    ST_RETURN,      // return a, b - Rhs=a,b (NULL, если return пустой)
+    ST_BREAK,       // break / break label - Label (NULL, если метки нет)
+    ST_CONTINUE,    // continue / continue label  Label
+    ST_DEFER,       // defer stmt  -  Body=stmt
+    ST_USING,       // using x  -  Expr=x
+ 
+    ST_IF,          // if [init;] cond {..} [else ..]   Init, Cond, Block, ElseBranch
+    ST_WHEN,        // when cond {..} [else ..]         Cond, Block, ElseBranch
+    ST_FOR,         // for {} / for cond {} / for init; cond; post {}   Init, Cond, Post, Block
+    ST_FOR_IN,      // for k, v in m {..}               Lhs=k,v  Expr=m  Block
+    ST_SWITCH,      // switch [init;] [cond] { case ... }   Init, Cond, Cases
+    ST_LABELED,     // outer: for ...                   Label=outer  Body=for
+    ST_DIRECTIVE    // #partial switch ...              Directive="#partial"  Body=switch
+};
+
+// Какой именно составной знак присваивания (+=, -=, ...)
+enum AssignOp {
+    AOP_ADD, AOP_SUB, AOP_MUL, AOP_DIV,
+    AOP_MOD, AOP_MOD2,
+    AOP_OR, AOP_XOR, AOP_AND, AOP_AND_NOT,
+    AOP_SHL, AOP_SHR,
+    AOP_LOG_AND, AOP_LOG_OR
+};
+ 
+// Одна ветка switch:  case 1, 2: ...   или   case: ...  (default)
+struct CaseClause {
+    struct ExprList   *Values;       // значения после case / NULL для "case:" (ветка по умолчанию)
+    struct StmtList   *Body;         // операторы ветки (может быть пустым)
+    int                Fallthrough;  // 1, если в конце ветки написан fallthrough
+    struct CaseClause *Next;
+    int Line;
+};
+ 
+struct CaseList {
+    struct CaseClause *First;
+    struct CaseClause *Last;
+};
+
+struct Statement {
+    enum StmtKind Kind;  // вид оператора 
+ 
+    struct Expression *Expr;      
+ 
+    struct ExprList   *Lhs;       // слева от =, :=, ::, ':' (левая часть присваивания)
+    struct ExprList   *Rhs;       // справа от =, :=, :: ; значения в return / NULL (правая часть присваивания)
+    enum AssignOp      Op;        // ST_OP_ASSIGN: какой знак
+ 
+    struct TypeExpr   *DeclType;  // тип после ':' / NULL
+    int                IsConst;   // 1 для констант (::), 0 для переменных
+ 
+    struct StmtList   *Block;     // тело - ST_BLOCK, ST_IF...
+    struct Statement  *Body;      // один вложенный оператор (для ST_DEFER, ST_LABELED, ST_DIRECTIVE)
+    char              *Label;     // имя метки у ST_BREAK, ST_CONTINUE, ST_LABELED
+    
+    // части if / for / switch
+    struct Statement  *Init;       // оператор до ';'
+    struct Expression *Cond;       // условие
+    struct Statement  *Post;       // оператор после второго ';' 
+    struct Statement  *ElseBranch; // что после else (else {..}) 
+    struct CaseList   *Cases;      // ветки switch
+    char              *Directive;  // ST_DIRECTIVE: текст директивы
+ 
+    struct Statement  *Next;       // следующий оператор в списке
+    int Line;                      // номер строки
+};
+
+// Список операторов (тело блока, тело функции)
+struct StmtList {
+    struct Statement *First;
+    struct Statement *Last;
+};
+#pragma endregion
 
 #endif 
