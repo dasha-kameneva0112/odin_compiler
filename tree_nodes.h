@@ -13,28 +13,6 @@ struct IdList;
 struct FieldDecl;
 struct EnumItem;
 
-struct Expression {
-    enum ExprType Type; // что за вид выражения
-
-    // значения листьев 
-    long long     IntVal;      
-    double        FloatVal;     
-    char          ImagUnit;    // 'i', 'j' или 'k' для E_IMAG 
-    unsigned int  RuneVal;     // E_RUNE 
-    char         *Str;         
-
-    // операнды 
-    struct Expression *Left;   // указатель на левого "ребёнка"
-    struct Expression *Right;  // указатель на правого "ребёнка"
-    struct Expression *Cond;   // условие для тернарной формы, тк надо 3 части  
-
-    struct TypeExpr   *CastType;  // cast(T) x: тип лежит в CastType, а x в Left 
-    struct ExprList   *Args;      // E_CALL; NULL, если аргументов нет 
-
-    struct Expression *Next;   // следующий элемент, если выражение входит в список 
-    int Line;   // номер строки в исходнике, чтобы потом выдавать понятные сообщения об ошибках 
-};
-
 // Список видов выражений
 enum ExprType {
     // виды делятся на 3 группы: 
@@ -99,9 +77,61 @@ enum ExprType {
     E_SELECTOR,        // a.name       Left=a   Str=name      
 
     // 5) приведение типа 
-    E_CAST,            // cast(T) x       CastType=T Left=x   
-    E_TRANSMUTE        // transmute(T) x  CastType=T Left=x   
+    E_CAST,            // cast(T) x       CastType=T Left=x    
 };
+
+// Встроенные типы (правило: используется, когда Kind == base_type) 
+enum BaseType {
+    BT_BOOL, BT_B8, BT_B16, BT_B32, BT_B64,
+    BT_INT, BT_I8, BT_I16, BT_I32, BT_I64, BT_I128,
+    BT_UINT, BT_U8, BT_U16, BT_U32, BT_U64, BT_U128, BT_UINTPTR,
+    BT_F16, BT_F32, BT_F64,
+    BT_COMPLEX32, BT_COMPLEX64, BT_COMPLEX128,
+    BT_QUATERNION64, BT_QUATERNION128, BT_QUATERNION256,
+    BT_STRING, BT_CSTRING, BT_BYTE, BT_RUNE, BT_RAWPTR, BT_ANY
+};
+
+// Вид типа 
+enum TypeKind {
+    TY_NAME,        // MyType -> Name                       
+    TY_BASE,        // int, f32, string... -> Base
+    TY_POINTER,     // ^T -> Elem      
+    TY_SLICE,       // []T -> Elem                       
+    TY_ARRAY,       // [N]T -> Len, Elem                  
+    TY_DYN_ARRAY,   // [dynamic]T -> Elem                       
+    TY_MAP,         // map[K]V -> Key, Elem (значение V)     
+    TY_PROC,        // proc(a: int) -> int  -> Params, Results            
+    TY_STRUCT,      // struct { ... } -> Fields                     
+    TY_ENUM,        // enum { A, B = 5 } -> Items                      
+    TY_UNION,       // union { ... } -> Fields                     
+    TY_BIT_SET,     // bit_set[T] -> Elem                       
+    TY_DISTINCT,    // distinct T -> Elem                       
+    TY_MATRIX       // matrix[R, C]T -> Len (R), Cols (C), Elem    
+};
+
+struct Expression {
+    enum ExprType Type; // что за вид выражения
+
+    // значения листьев 
+    long long     IntVal;      
+    double        FloatVal;     
+    char          ImagUnit;    // 'i', 'j' или 'k' для E_IMAG 
+    unsigned int  RuneVal;     // E_RUNE 
+    char         *Str;         
+
+    // операнды 
+    struct Expression *Left;   // указатель на левого "ребёнка"
+    struct Expression *Right;  // указатель на правого "ребёнка"
+    struct Expression *Cond;   // условие для тернарной формы, тк надо 3 части  
+
+    struct TypeExpr   *CastType;  // cast(T) x: тип лежит в CastType, а x в Left 
+    struct ExprList   *Args;      // E_CALL; NULL, если аргументов нет 
+
+    struct Expression *Next;   // следующий элемент, если выражение входит в список 
+    int Line;   // номер строки в исходнике, чтобы потом выдавать понятные сообщения об ошибках 
+};
+
+
 
 // Список выражений: expr_list, arg_list (например, аргументы f(a, b, c))
 // Для них связный список - храним First и Last, а обращение к следующему по полю Next
@@ -143,34 +173,6 @@ struct TypeExpr {
  
     struct TypeExpr *Next;       // следующий элемент, если тип входит в список (TypeList) 
     int Line;
-};
-
-// Вид типа 
-enum TypeKind {
-    TY_NAME,        // MyType -> Name                       
-    TY_BASE,        
-    TY_SLICE,       // []T -> Elem                       
-    TY_ARRAY,       // [N]T -> Len, Elem                  
-    TY_DYN_ARRAY,   // [dynamic]T -> Elem                       
-    TY_MAP,         // map[K]V -> Key, Elem (значение V)     
-    TY_PROC,        // proc(a: int) -> int  -> Params, Results            
-    TY_STRUCT,      // struct { ... } -> Fields                     
-    TY_ENUM,        // enum { A, B = 5 } -> Items                      
-    TY_UNION,       // union { ... } -> Fields                     
-    TY_BIT_SET,     // bit_set[T] -> Elem                       
-    TY_DISTINCT,    // distinct T -> Elem                       
-    TY_MATRIX       // matrix[R, C]T -> Len (R), Cols (C), Elem    
-};
-
-// Встроенные типы (правило: используется, когда Kind == base_type) 
-enum BaseType {
-    BT_BOOL, BT_B8, BT_B16, BT_B32, BT_B64,
-    BT_INT, BT_I8, BT_I16, BT_I32, BT_I64, BT_I128,
-    BT_UINT, BT_U8, BT_U16, BT_U32, BT_U64, BT_U128, BT_UINTPTR,
-    BT_F16, BT_F32, BT_F64,
-    BT_COMPLEX32, BT_COMPLEX64, BT_COMPLEX128,
-    BT_QUATERNION64, BT_QUATERNION128, BT_QUATERNION256,
-    BT_STRING, BT_CSTRING, BT_BYTE, BT_RUNE, BT_RAWPTR, BT_ANY
 };
 
 // это список типов (например, return_type_list -> (int, string) ) 
