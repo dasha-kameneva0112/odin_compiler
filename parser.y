@@ -21,23 +21,19 @@ void yyerror(const char *s);
             } imag_val;   /* 3.5i -> {3.5, 'i'} */
 
  /* Узлы синтаксического дерева */
-    struct Expression  *expr_node;                       /* Указатель на выражение */
+    struct ExprNode  *expr_node;                       /* Указатель на выражение */
     struct ExprList    *expr_list_node;                  /* Список выражений */
-    struct TypeExpr    *type_expr_node;                  /* Указатель на описание типа */
+    struct TypeNode    *type_expr_node;                  /* Указатель на описание типа */
     struct IdList      *id_list_node;                    /* Cписок имен */
-    struct FieldDecl   *field_decl_node;                 /* Одно объявление полей или параметров */
+    struct FieldNode   *field_decl_node;                 /* Одно объявление полей или параметров */
     struct FieldList   *field_list_node;                 /* Список таких объявлений */
     struct TypeList    *type_list_node;                  /* Список типов */
-    struct EnumItem    *enum_item_node;                  /* Один элемент enum */
+    struct EnumItemNode    *enum_item_node;                  /* Один элемент enum */
     struct EnumItemList *enum_item_list_node;            /* Список элементов enum */
-}
-
 
 %code {
         #include "tree_build.h"
 }
-
-
 
 %locations
 %define parse.error verbose

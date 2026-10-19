@@ -2,17 +2,29 @@
 #define TREE_NODES_H
 
 // Узлы синтаксического дерева языка Odin 
-struct Expression;
+struct ExprNode;
 struct ExprList;
-struct TypeExpr;
+struct TypeNode;
 struct TypeList;
 struct FieldList;
 struct EnumItemList;
-struct Ident;
+struct IdentNode;
 struct IdList;
-struct FieldDecl;
-struct EnumItem;
+struct FieldNode;
+struct EnumItemNode;
+struct StmtNode;
+struct StmtList;
+struct CaseNode;
+struct CaseList;
+struct DeclNode;
+struct DeclList;
+struct AttrNode;
+struct AttrList;
+struct ImportNode;
+struct ImportList;
 
+
+#pragma region ВЫРАЖЕНИЯ
 // Список видов выражений
 enum ExprType {
     // виды делятся на 3 группы: 
@@ -23,7 +35,7 @@ enum ExprType {
     E_STRING,          // "abc" -> Str
     E_RAW_STRING,      // `abc` -> Str 
     E_IMAG,            // 3.5i -> FloatVal + ImagUnit 
-    E_RUNE,            // 'a' -> RuneVal 
+    E_RUNE,            // a -> RuneVal 
     E_BOOL,            // true / false -> IntVal (0 или 1) 
     E_NIL,             //  nil                        
     E_UNDEF,           //  ---    
@@ -109,25 +121,25 @@ enum TypeKind {
     TY_MATRIX       // matrix[R, C]T -> Len (R), Cols (C), Elem    
 };
 
-struct Expression {
-    enum ExprType Type; // что за вид выражения
+struct ExprNode {
+    enum ExprType Type;  // что за вид выражения
 
     // значения листьев 
     long long     IntVal;      
     double        FloatVal;     
-    char          ImagUnit;    // 'i', 'j' или 'k' для E_IMAG 
+    char          ImagUnit;    // i, j или k для E_IMAG 
     unsigned int  RuneVal;     // E_RUNE 
     char         *Str;         
 
     // операнды 
-    struct Expression *Left;   // указатель на левого "ребёнка"
-    struct Expression *Right;  // указатель на правого "ребёнка"
-    struct Expression *Cond;   // условие для тернарной формы, тк надо 3 части  
+    struct ExprNode *Left;   // указатель на левого "ребенка"
+    struct ExprNode *Right;  // указатель на правого "ребенка"
+    struct ExprNode *Cond;   // условие для тернарной формы, тк надо 3 части  
 
-    struct TypeExpr   *CastType;  // cast(T) x: тип лежит в CastType, а x в Left 
+    struct TypeNode   *CastType;  // cast(T) x: тип лежит в CastType, а x в Left 
     struct ExprList   *Args;      // E_CALL; NULL, если аргументов нет 
 
-    struct Expression *Next;   // следующий элемент, если выражение входит в список 
+    struct ExprNode *Next;   // следующий элемент, если выражение входит в список 
     int Line;   // номер строки в исходнике, чтобы потом выдавать понятные сообщения об ошибках 
 };
 
@@ -136,34 +148,34 @@ struct Expression {
 // Список выражений: expr_list, arg_list (например, аргументы f(a, b, c))
 // Для них связный список - храним First и Last, а обращение к следующему по полю Next
 struct ExprList {
-    struct Expression *First;
-    struct Expression *Last;
+    struct ExprNode *First;
+    struct ExprNode *Last;
 };
 
-struct Ident {
+struct IdentNode {
     char *Name;
-    struct Ident *Next;
+    struct IdentNode *Next;
     int Line;
 };
 
 // Это список имен 
 // аналогичный ExprList список 
 struct IdList {
-    struct Ident *First;
-    struct Ident *Last;
+    struct IdentNode *First;
+    struct IdentNode *Last;
 };
 
 // для типов, которые пишутся после двоеточия (x: int, arr: [10]int, m: map[string]int и тд)
-struct TypeExpr {
+struct TypeNode {
     enum TypeKind Kind;          // что за тип (имя, срез, массив и тд)
  
     char             *Name;      // TY_NAME 
     enum BaseType     Base;      // TY_BASE 
  
-    struct TypeExpr  *Elem;      // тип, на который ссылается указатель, срез, массив и т.д. 
-    struct TypeExpr  *Key;       // TY_MAP: тип ключа 
-    struct Expression *Len;      // TY_ARRAY: длина; TY_MATRIX: число строк 
-    struct Expression *Cols;     // TY_MATRIX: число столбцов 
+    struct TypeNode  *Elem;      // тип, на который ссылается указатель, срез, массив и т.д. 
+    struct TypeNode  *Key;       // TY_MAP: тип ключа 
+    struct ExprNode *Len;      // TY_ARRAY: длина; TY_MATRIX: число строк 
+    struct ExprNode *Cols;     // TY_MATRIX: число столбцов 
  
     struct FieldList    *Fields; // TY_STRUCT, TY_UNION 
     struct EnumItemList *Items;  // TY_ENUM 
@@ -171,14 +183,14 @@ struct TypeExpr {
     struct FieldList *Params;    // TY_PROC: параметры 
     struct TypeList  *Results;   // TY_PROC: возвращаемые типы; NULL, если ничего не возвращает 
  
-    struct TypeExpr *Next;       // следующий элемент, если тип входит в список (TypeList) 
+    struct TypeNode *Next;       // следующий элемент, если тип входит в список (TypeList) 
     int Line;
 };
 
 // это список типов (например, return_type_list -> (int, string) ) 
 struct TypeList {
-    struct TypeExpr *First;
-    struct TypeExpr *Last;
+    struct TypeNode *First;
+    struct TypeNode *Last;
 };
  
 // Объявление типа "имена : тип"
@@ -187,31 +199,190 @@ struct TypeList {
 // param (параметр процедуры), field_decl (поле struct/union)
 // и далее пригодится для объявлений переменных
 // a, b: int -> Names = [a, b], Type = int                         
-struct FieldDecl {
+struct FieldNode {
     struct IdList    *Names;
-    struct TypeExpr  *Type;
-    struct FieldDecl *Next;
+    struct TypeNode  *Type;
+    struct FieldNode *Next;
     int Line;
 };
  
-// это список полей
 struct FieldList {
-    struct FieldDecl *First;
-    struct FieldDecl *Last;
+    struct FieldNode *First;
+    struct FieldNode *Last;
 };
  
 // один элемент enum:  Red   или   Green = 5 
-struct EnumItem {
+struct EnumItemNode {
     char              *Name;
-    struct Expression *Value;    // мб NULL
-    struct EnumItem   *Next;
+    struct ExprNode *Value;    // мб NULL
+    struct EnumItemNode   *Next;
     int Line;
 };
  
 // это список значений enum
 struct EnumItemList {
-    struct EnumItem *First;
-    struct EnumItem *Last;
+    struct EnumItemNode *First;
+    struct EnumItemNode *Last;
 };
+#pragma endregion
+
+
+#pragma region ОПЕРАТОРЫ
+
+// вид оператора
+enum StmtKind {
+    ST_EXPR,        // f() - Expr=f()
+    ST_ASSIGN,      // a, b = 1, 2 - Lhs=a,b  Rhs=1,2
+    ST_OP_ASSIGN,   // x += 1 - Lhs=x (один элемент)  Rhs=1 (один элемент)  Op=AOP_ADD
+    ST_DECL,        // x := 5 / x: int = 5 / x: int / x :: 5 / x: int : 5
+    ST_BLOCK,       // { ... } - Block=список операторов
+    ST_RETURN,      // return a, b - Rhs=a,b (NULL, если return пустой)
+    ST_BREAK,       // break / break label - Label (NULL, если метки нет)
+    ST_CONTINUE,    // continue / continue label  Label
+    ST_DEFER,       // defer stmt  -  Body=stmt
+    ST_USING,       // using x  -  Expr=x
+ 
+    ST_IF,          // if [init;] cond {..} [else ..]   Init, Cond, Block, ElseBranch
+    ST_WHEN,        // when cond {..} [else ..]         Cond, Block, ElseBranch
+    ST_FOR,         // for {} / for cond {} / for init; cond; post {}   Init, Cond, Post, Block
+    ST_FOR_IN,      // for k, v in m {..}               Lhs=k,v  Expr=m  Block
+    ST_SWITCH,      // switch [init;] [cond] { case ... }   Init, Cond, Cases
+    ST_LABELED,     // outer: for ...                   Label=outer  Body=for
+    ST_DIRECTIVE    // #partial switch ...              Directive="#partial"  Body=switch
+};
+
+// Какой именно составной знак присваивания (+=, -=, ...)
+enum AssignOp {
+    AOP_ADD, AOP_SUB, AOP_MUL, AOP_DIV,
+    AOP_MOD, AOP_MOD2,
+    AOP_OR, AOP_XOR, AOP_AND, AOP_AND_NOT,
+    AOP_SHL, AOP_SHR,
+    AOP_LOG_AND, AOP_LOG_OR
+};
+ 
+// Одна ветка switch:  case 1, 2: ...   или   case: ...  (default)
+struct CaseNode {
+    struct ExprList   *Values;       // значения после case / NULL для "case:" (ветка по умолчанию)
+    struct StmtList   *Body;         // операторы ветки (может быть пустым)
+    int                Fallthrough;  // 1, если в конце ветки написан fallthrough
+    struct CaseNode *Next;
+    int Line;
+};
+ 
+struct CaseList {
+    struct CaseNode *First;
+    struct CaseNode *Last;
+};
+
+struct StmtNode {
+    enum StmtKind Kind;  // вид оператора 
+ 
+    struct ExprNode *Expr;      
+ 
+    struct ExprList   *Lhs;       // слева от =, :=, ::, : (левая часть присваивания)
+    struct ExprList   *Rhs;       // справа от =, :=, :: ; значения в return / NULL (правая часть присваивания)
+    enum AssignOp      Op;        // ST_OP_ASSIGN: какой знак
+ 
+    struct TypeNode   *DeclType;  // тип после : / NULL
+    int                IsConst;   // 1 для констант (::), 0 для переменных
+ 
+    struct StmtList   *Block;     // тело - ST_BLOCK, ST_IF...
+    struct StmtNode  *Body;      // один вложенный оператор (для ST_DEFER, ST_LABELED, ST_DIRECTIVE)
+    char              *Label;     // имя метки у ST_BREAK, ST_CONTINUE, ST_LABELED
+    
+    // части if / for / switch
+    struct StmtNode  *Init;       // оператор до ;
+    struct ExprNode *Cond;       // условие
+    struct StmtNode  *Post;       // оператор после второго ; 
+    struct StmtNode  *ElseBranch; // что после else (else {..}) 
+    struct CaseList   *Cases;      // ветки switch
+    char              *Directive;  // ST_DIRECTIVE: текст директивы
+ 
+    struct StmtNode  *Next;       // следующий оператор в списке
+    int Line;                      // номер строки
+};
+
+// Список операторов (тело блока, тело функции)
+struct StmtList {
+    struct StmtNode *First;
+    struct StmtNode *Last;
+};
+#pragma endregion
+
+
+#pragma region ВЕРХНИЙ УРОВЕНЬ
+ 
+// Атрибут:  @private   или   @(link_name="foo", export)
+// Это один атрибут 
+struct AttrNode {
+    char              *Name;    // "private" / "link_name" / "export"
+    struct ExprNode *Value;   // значение после = / NULL, если его нет
+    struct AttrNode  *Next;
+    int Line;
+};
+ 
+struct AttrList {
+    struct AttrNode *First;
+    struct AttrNode *Last;
+};
+ 
+// Вид объявлений верхнего уровня
+enum DeclKind {
+    D_PROC,            // main :: proc(a: int) -> int { ... }    Name, Params, Results, Body
+    D_PROC_GROUP,      // foo :: proc { foo_int, foo_str }       Name, Group
+    D_VAR,             // x: int = 5 / x: int / x := 5           Names, DeclType, Values
+    D_CONST,           // MAX :: 100 / MAX: int : 100            Names, DeclType, Values
+                       // MyType :: struct { ... }               Names, ValueType
+    D_FOREIGN_IMPORT,  // foreign import lib "lib.lib"           Name, Path
+    D_FOREIGN_BLOCK    // foreign { ... }                        Body
+};
+
+// объявление верхнего уровня
+struct DeclNode {
+    enum DeclKind Kind; // вид объявления
+ 
+    char             *Name;         
+    struct IdList    *Names;        
+ 
+    struct TypeNode  *DeclType;     // тип после : / NULL, если не написан
+    struct ExprList  *Values;       // значения справа / NULL, если их нет
+    struct TypeNode  *ValueType;    // справа стоит ТИП (MyType :: struct {..}), а не выражение
+ 
+    struct FieldList *Params;       // параметры
+    struct TypeList  *Results;      // что возвращает / NULL, если ничего
+    struct StmtList  *Body;         // тело процедуры / содержимое блока
+    struct IdList    *Group;        // список имен в { ... }
+    char             *Path;         // строка с путем
+    struct AttrList  *Attrs;        // атрибуты перед объявлением / NULL, если их нет
+ 
+    struct DeclNode      *Next;
+    int Line;
+};
+ 
+struct DeclList {
+    struct DeclNode *First;
+    struct DeclNode *Last;
+};
+ 
+// import "core:fmt"
+struct ImportNode {
+    char          *Path;  // "core:fmt"
+    struct ImportNode *Next;
+    int Line;
+};
+ 
+struct ImportList {
+    struct ImportNode *First;
+    struct ImportNode *Last;
+};
+ 
+// Вся программа: корень дерева (на него будет указывать root)
+struct Program {
+    char              *PackageName;  // package main -> "main"
+    struct ImportList *Imports;      // все import (список может быть пустым)
+    struct DeclList   *Decls;        // все объявления верхнего уровня
+};
+ 
+#pragma endregion
 
 #endif 
