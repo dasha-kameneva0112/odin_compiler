@@ -417,8 +417,8 @@ fall_tail: FALLTHROUGH
          ;
 
 /* ---- Список выражений ---- */
-expr_list: expr
-         | expr_list ',' expr
+expr_list: expr                     { $$ = list_new($1); }
+         | expr_list ',' expr       { $$ = list_append($1, $3); }
          ;
 
 /* ---- Условные операторы when ---- */
@@ -444,81 +444,82 @@ attr: ID
     ;
 
 /* ---- Выражения ---- */
-expr: ID
-    | INT_LIT
-    | FLOAT_LIT
-    | STRING_LIT
-    | RAW_STRING_LIT
-    | IMAGINARY_LIT
-    | RUNE_LIT
-    | NIL
-    | UNDEFINED
-    | BOOL_LIT
-    | '(' expr ')'
+expr: ID                                   { $$ = new_expr(E_ID, @$.first_line); $$->Str = $1; }
+    | INT_LIT                              { $$ = new_expr(E_INT, @$.first_line); $$->IntVal = $1; }
+    | FLOAT_LIT                            { $$ = new_expr(E_FLOAT, @$.first_line); $$->FloatVal = $1; }
+    | STRING_LIT                           { $$ = new_expr(E_STRING, @$.first_line); $$->Str = $1; }
+    | RAW_STRING_LIT                       { $$ = new_expr(E_RAW_STRING, @$.first_line); $$->Str = $1; }
+    | IMAGINARY_LIT                        { $$ = new_expr(E_IMAG, @$.first_line); $$->FloatVal = $1.value; $$->ImagUnit = $1.unit; }
+    | RUNE_LIT                             { $$ = new_expr (E_RUNE, @$.first_line); $$->RuneVal = $1; }
+    | NIL                                  { $$ = new_expr(E_NIL, @$.first_line);}
+    | UNDEFINED                            { $$ = new_expr(E_UNDEF, @$.first_line);}
+    | BOOL_LIT                             { $$ = new_expr(E_BOOL, @$.first_line); $$->IntVal = $1;}
+    | '(' expr ')'                         { $$ = $2;}
 
 /* ---- унарные (приоритет UNARY) ---- */
-    | '+' expr %prec UNARY
-    | '-' expr %prec UNARY
-    | '!' expr %prec UNARY
-    | '~' expr %prec UNARY
-    | '&' expr %prec UNARY
-    | AUTO_CAST expr %prec UNARY
+    | '+' expr %prec UNARY                 { $$ = mk_unary(E_UPLUS, $2, @$.first_line); }
+    | '-' expr %prec UNARY                 { $$ = mk_unary(E_UMINUS, $2, @$.first_line); }
+    | '!' expr %prec UNARY                 { $$ = mk_unary(E_NOT, $2, @$.first_line); }
+    | '~' expr %prec UNARY                 { $$ = mk_unary(E_BIT_NOT, $2, @$.first_line); }
+    | '&' expr %prec UNARY                 { $$ = mk_unary(E_ADDR, $2, @$.first_line); }
+    | AUTO_CAST expr %prec UNARY           { $$ = mk_unary(E_AUTO_CAST, $2, @$.first_line); }
 
 /* ---- бинарные: логика ---- */
-    | expr OP_LOG_OR expr
-    | expr OP_LOG_AND expr
+    | expr OP_LOG_OR expr                  { $$ = mk_binary(E_LOG_OR, $1, $3, @$.first_line); }
+    | expr OP_LOG_AND expr                 { $$ = mk_binary(E_LOG_AND, $1, $3, @$.first_line); }
 /* ---- сравнения ---- */
-    | expr OP_EQ expr
-    | expr OP_NE expr
-    | expr '<' expr
-    | expr '>' expr
-    | expr OP_LE expr
-    | expr OP_GE expr
+    | expr OP_EQ expr                      { $$ = mk_binary(E_EQ, $1, $3, @$.first_line); }
+    | expr OP_NE expr                      { $$ = mk_binary(E_NE, $1, $3, @$.first_line); }
+    | expr '<' expr                        { $$ = mk_binary(E_LT, $1, $3, @$.first_line); }
+    | expr '>' expr                        { $$ = mk_binary(E_GT, $1, $3, @$.first_line); }
+    | expr OP_LE expr                      { $$ = mk_binary(E_LE, $1, $3, @$.first_line); }
+    | expr OP_GE expr                      { $$ = mk_binary(E_GE, $1, $3, @$.first_line); }
+
 /* ---- арифметика и битовые ---- */
-    | expr '+' expr
-    | expr '-' expr
-    | expr '|' expr
-    | expr '~' expr
-    | expr '*' expr
-    | expr '/' expr
-    | expr '%' expr
-    | expr OP_MOD2 expr
-    | expr '&' expr
-    | expr OP_AND_NOT expr
-    | expr OP_SHL expr
-    | expr OP_SHR expr
+    | expr '+' expr                        { $$ = mk_binary(E_ADD, $1, $3, @$.first_line); }
+    | expr '-' expr                        { $$ = mk_binary(E_SUB, $1, $3, @$.first_line); }
+    | expr '|' expr                        { $$ = mk_binary(E_BIT_OR, $1, $3, @$.first_line); }
+    | expr '~' expr                        { $$ = mk_binary(E_BIT_XOR, $1, $3, @$.first_line); }
+    | expr '*' expr                        { $$ = mk_binary(E_MUL, $1, $3, @$.first_line); }
+    | expr '/' expr                        { $$ = mk_binary(E_DIV, $1, $3, @$.first_line); }
+    | expr '%' expr                        { $$ = mk_binary(E_MOD, $1, $3, @$.first_line); }
+    | expr OP_MOD2 expr                    { $$ = mk_binary(E_MOD2, $1, $3, @$.first_line); }
+    | expr '&' expr                        { $$ = mk_binary(E_BIT_AND, $1, $3, @$.first_line); }
+    | expr OP_AND_NOT expr                 { $$ = mk_binary(E_AND_NOT, $1, $3, @$.first_line); }
+    | expr OP_SHL expr                     { $$ = mk_binary(E_SHL, $1, $3, @$.first_line); }
+    | expr OP_SHR expr                     { $$ = mk_binary(E_SHR, $1, $3, @$.first_line); }
 
   /* ---- or_else и диапазоны ---- */
-    | expr OR_ELSE expr
-    | expr OP_RANGE expr
-    | expr OP_RANGE_INCLUSIVE expr
-    | expr OP_RANGE_EXCLUSIVE expr
+    | expr OR_ELSE expr                    { $$ = mk_binary(E_OR_ELSE, $1, $3, @$.first_line); }
+    | expr OP_RANGE expr                   { $$ = mk_binary(E_RANGE, $1, $3, @$.first_line); }
+    | expr OP_RANGE_INCLUSIVE expr         { $$ = mk_binary(E_RANGE_INCL, $1, $3, @$.first_line); }
+    | expr OP_RANGE_EXCLUSIVE expr         { $$ = mk_binary(E_RANGE_EXCL, $1, $3, @$.first_line); }
 
 /* ---- тернарные формы ---- */
-    | expr '?' expr ':' expr  %prec '?'
-    | expr WHEN expr ELSE expr %prec WHEN
-    | expr IF expr ELSE expr %prec IF
+    | expr '?' expr ':' expr  %prec '?'    { $$ = mk_ternary(E_TERNARY_Q, $1, $3, $5, @$.first_line); }
+    | expr WHEN expr ELSE expr %prec WHEN  { $$ = mk_ternary(E_TERNARY_WHEN, $3, $1, $5, @$.first_line); }
+    | expr IF expr ELSE expr %prec IF      { $$ = mk_ternary(E_TERNARY_IF, $3, $1, $5, @$.first_line); }
 
 /* ---- постфиксные ---- */
-    | expr '^'
-    | expr OR_RETURN
-    | expr OR_BREAK
-    | expr OR_CONTINUE
-    | expr '(' arg_list_op ')'
-    | expr '[' expr ']'
-    | expr '.' ID
+    | expr '^'                             { $$ = mk_unary(E_DEREF, $1, @$.first_line); }
+    | expr OR_RETURN                       { $$ = mk_unary(E_OR_RETURN, $1, @$.first_line); }
+    | expr OR_BREAK                        { $$ = mk_unary(E_OR_BREAK, $1, @$.first_line); }
+    | expr OR_CONTINUE                     { $$ = mk_unary(E_OR_CONTINUE, $1, @$.first_line); }
+    | expr '(' arg_list_op ')'             { $$ = mk_unary(E_CALL, $1, @$.first_line); $$->Args = $3; }
+    | expr '[' expr ']'                    { $$ = mk_binary(E_INDEX, $1, $3, @$.first_line); }
+    | expr '.' ID                          { $$ = mk_unary(E_SELECTOR, $1, @$.first_line); $$ -> Str = $3;}
 
 /* ---- приведение типа ---- */
-    | CAST '(' type_expr ')' expr %prec UNARY
+    | CAST '(' type_expr ')' expr %prec UNARY  { $$ = mk_unary(E_CAST, $5, @$.first_line); /* CastType заполним на этапе типов */}
     ;
 
 /* ---- аргументы вызова функции ---- */
-arg_list_op: %empty
-           | arg_list
+arg_list_op: %empty                        { $$ = NULL;}
+           | arg_list                      { $$ = $1;}
            ;
 
-arg_list: expr
-        | arg_list ',' expr
+arg_list: expr                             { $$ = list_new($1);}
+        | arg_list ',' expr                { $$ = list_append($1, $3);}
         ;
 
 %%
