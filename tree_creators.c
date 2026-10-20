@@ -2,6 +2,17 @@
  #include <stdlib.h>
  #include "tree_creators.h"
  
+ /* Единая проверка выделения памяти. calloc обнуляет поля узла/списка. */
+ static void *checked_calloc(size_t count, size_t size)
+ {
+   void *ptr = calloc(count, size);
+   if (ptr == NULL) {
+      fprintf(stderr, "out of memory\n");
+      exit(EXIT_FAILURE);
+   }
+   return ptr;
+ }
+
  /* Функции построения синтаксического дерева */
  struct ExprNode *new_expr(enum ExprType type, int line)
  {
@@ -103,3 +114,256 @@
    list->Last = id;
    return list;
  }
+ 
+ 
+ 
+ /* ---------------- Операторы и их списки ---------------- */
+ struct StmtNode *stmt_new(enum StmtKind kind, int line)
+ {
+   struct StmtNode *stmt = checked_calloc(1, sizeof *stmt);
+   stmt->Kind = kind;
+   stmt->Line = line;
+   return stmt;
+ }
+
+ /* создать список */
+ struct StmtList *stmtlist_new(struct StmtNode *stmt)
+ {
+   struct StmtList *list = checked_calloc(1, sizeof *list);
+   list->First = list->Last = stmt;
+   return list;
+ }
+ 
+ struct StmtList *stmtlist_append(struct StmtList *list, struct StmtNode *stmt)
+ {
+   // если список еще не создан
+   if (list == NULL) return stmtlist_new(stmt);
+
+   // новый оператор равен NULL (ниче не добавляем)
+   if (stmt == NULL) return list;
+
+   // список существует и тогда связываем последний оператор с новым
+   if (list->First == NULL) list->First = list->Last = stmt;
+   else {
+      list->Last->Next = stmt;
+      list->Last = stmt;
+   }
+   return list;
+ } 
+
+ /* Оператор, содержащий одно выражение */
+ struct StmtNode *stmt_expr(struct ExprNode *expr, int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_EXPR, line);
+   stmt->Expr = expr;
+   return stmt;
+ }
+
+ /* Оператор return */
+ struct StmtNode *stmt_return(struct ExprList *values, int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_RETURN, line);
+   stmt->Rhs = values;
+   return stmt;
+ }
+
+ /* Оператор break или continue */
+ struct StmtNode *stmt_jump(enum StmtKind kind, char *label, int line)
+ {
+   struct StmtNode *stmt = stmt_new(kind, line);
+   stmt->Label = label;
+   return stmt;
+ }
+
+ /* Оператор defer */
+ struct StmtNode *stmt_defer(struct StmtNode *body, int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_DEFER, line);
+   stmt->Body = body;
+   return stmt;
+ }
+
+ /* Оператор using */
+ struct StmtNode *stmt_using(struct ExprNode *expr, int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_USING, line);
+   stmt->Expr = expr;
+   return stmt;
+ }
+
+ /* ---- Присваивание: x = 10 ---- */
+ struct StmtNode *stmt_assign(struct ExprList *lhs,
+                           struct ExprList *rhs,
+                           int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_ASSIGN, line);
+   stmt->Lhs = lhs;
+   stmt->Rhs = rhs;
+   return stmt;
+ }
+
+ /* ---- Составное присваивание: x += 5 ---- */
+ struct StmtNode *stmt_op_assign(struct ExprList *lhs,
+                              enum AssignOp op,
+                              struct ExprList *rhs,
+                              int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_OP_ASSIGN, line);
+   stmt->Lhs = lhs;
+   stmt->Op = op;
+   stmt->Rhs = rhs;
+   return stmt;
+ }
+
+ /* ---- Объявление переменной ---- */
+ struct StmtNode *stmt_decl(struct ExprList *names,
+                        struct TypeNode *type,
+                        int is_const,
+                        struct ExprList *values,
+                        int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_DECL, line);
+   stmt->Lhs = names;
+   stmt->DeclType = type;
+   stmt->IsConst = is_const;
+   stmt->Rhs = values;
+   return stmt;
+ }
+
+ /* ---- Блок команд ---- */
+ struct StmtNode *stmt_block(struct StmtList *block, int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_BLOCK, line);
+   stmt->Block = block;
+   return stmt;
+ }
+ 
+ /* ---- Условие if ---- */
+ struct StmtNode *stmt_if(struct ExprNode *cond,
+                     struct StmtList *block,
+                     struct StmtNode *else_branch,
+                     int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_IF, line);
+   stmt->Cond = cond;
+   stmt->Block = block;
+   stmt->ElseBranch = else_branch;
+   return stmt;
+ }
+ 
+ /* ---- Цикл for ---- */
+ struct StmtNode *stmt_for(struct StmtNode *init,
+                        struct ExprNode *cond,
+                        struct StmtNode *post,
+                        struct StmtList *block,
+                        int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_FOR, line);
+   stmt->Init = init;
+   stmt->Cond = cond;
+   stmt->Post = post;
+   stmt->Block = block;
+   return stmt;
+ }
+
+ /* ---- Перебор for-in ---- */
+ struct StmtNode *stmt_for_in(struct ExprList *lhs,
+                           struct ExprNode *expr,
+                           struct StmtList *block,
+                           int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_FOR_IN, line);
+   stmt->Lhs = lhs;
+   stmt->Expr = expr;
+   stmt->Block = block;
+   return stmt;
+ } 
+
+ /* ---- Условие when ---- */
+ struct StmtNode *stmt_when(struct ExprNode *cond,
+                        struct StmtList *block,
+                        struct StmtNode *else_branch,
+                        int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_WHEN, line);
+   stmt->Cond = cond;
+   stmt->Block = block;
+   stmt->ElseBranch = else_branch;
+   return stmt;
+ }
+
+ /* ---- Switch ---- */
+ struct StmtNode *stmt_switch(struct StmtNode *init,
+                           struct ExprNode *cond,
+                           struct CaseList *cases,
+                           int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_SWITCH, line);
+   stmt->Init = init;
+   stmt->Cond = cond;
+   stmt->Cases = cases;
+   return stmt;
+ }
+
+ /* ---- Оператор с меткой ---- */
+ struct StmtNode *stmt_labeled(char *label,
+                           struct StmtNode *body,
+                           int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_LABELED, line);
+   stmt->Label = label;
+   stmt->Body = body;
+   return stmt;
+ }
+
+ /* ---- Директива ---- */
+ struct StmtNode *stmt_directive(char *directive,
+                              struct StmtNode *body,
+                              int line)
+ {
+   struct StmtNode *stmt = stmt_new(ST_DIRECTIVE, line);
+   stmt->Directive = directive;
+   stmt->Body = body;
+   return stmt;
+ }
+
+ /* ---------------- Ветки switch/case ---------------- */
+ struct CaseNode *case_new(struct ExprList *values, 
+                        struct StmtList *body,
+                        int fallthrough, 
+                        int line)
+ {
+   struct CaseNode *node = checked_calloc(1, sizeof *node);
+   node->Values = values;
+   node->Body = body;
+   node->Fallthrough = fallthrough;
+   node->Line = line;
+
+   return node;
+ }
+
+ /* создание списка веток */
+ struct CaseList *caselist_new(struct CaseNode *node)
+ {
+   struct CaseList *list = checked_calloc(1, sizeof *list);
+   list->First = node;
+   list->Last = node;
+   
+   return list;
+ }
+
+ struct CaseList *caselist_append(struct CaseList *list, struct CaseNode *item)
+ {
+   if (list == NULL) return caselist_new(item);
+   if (item == NULL) return list;
+   if (list->First == NULL) list->First = list->Last = item;
+   else {
+      list->Last->Next = item;
+      list->Last = item;
+   }
+   return list;
+ }
+
+
+ 
+
