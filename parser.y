@@ -30,9 +30,10 @@ void yyerror(const char *s);
     struct TypeList    *type_list_node;                  /* Список типов */
     struct EnumItemNode    *enum_item_node;                  /* Один элемент enum */
     struct EnumItemList *enum_item_list_node;            /* Список элементов enum */
+}
 
 %code {
-        #include "tree_build.h"
+        #include "tree_creators.h"
 }
 
 %locations

@@ -4,18 +4,18 @@
     #include "tree_nodes.h"
     
     // --------------Выражения----------------
-    struct Expression *new_expr(enum ExprType type, int line)
-    struct Expression *mk_unary(enum ExprType type, struct Expression *left, int line);
-    struct Expression *mk_binary(enum ExprType type, struct Expression *left, struct Expression *right, int line);
-    struct Expression *mk_ternary(enum ExprType type, struct Expression *cond,struct Expression *left, struct Expression *right, int line);
+    struct ExprNode  *new_expr(enum ExprType type, int line);
+    struct ExprNode  *mk_unary(enum ExprType type, struct ExprNode *left, int line);
+    struct ExprNode  *mk_binary(enum ExprType type, struct ExprNode *left, struct ExprNode *right, int line);
+    struct ExprNode  *mk_ternary(enum ExprType type, struct ExprNode *cond,  struct ExprNode *left, struct ExprNode *right, int line);
 
     // --------------Список выражений----------------
-    struct ExprList *list_new(struct Expression *expr);
-    struct ExprList *list_append(struct ExprList *list, struct Expration *expr);
+    struct ExprList  *list_new(struct ExprNode *expr);
+    struct ExprList  *list_append(struct ExprList *list, struct ExprNode *expr);
    
     // ---------------Список имен------------------------
-    struct Ident *idlist_new(char *name, int line);
-    struct IdList *idlist_new(char *name, int line);
-    struct IdList *idlist_append(struct IdList *list, char *name, int line);
+    struct IdentNode *ident_new(char *name, int line);
+    struct IdList    *idlist_new(char *name, int line);
+    struct IdList    *idlist_append(struct IdList *list, char *name, int line);
 
     #endif
