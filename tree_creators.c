@@ -191,7 +191,7 @@
    return stmt;
  }
 
- /* ---- Присваивание: x = 10 ---- */
+ /* Присваивание: x = 10 */
  struct StmtNode *stmt_assign(struct ExprList *lhs,
                            struct ExprList *rhs,
                            int line)
@@ -202,7 +202,7 @@
    return stmt;
  }
 
- /* ---- Составное присваивание: x += 5 ---- */
+ /* Составное присваивание: x += 5 */
  struct StmtNode *stmt_op_assign(struct ExprList *lhs,
                               enum AssignOp op,
                               struct ExprList *rhs,
@@ -215,7 +215,7 @@
    return stmt;
  }
 
- /* ---- Объявление переменной ---- */
+ /* Объявление переменной */
  struct StmtNode *stmt_decl(struct ExprList *names,
                         struct TypeNode *type,
                         int is_const,
@@ -230,7 +230,7 @@
    return stmt;
  }
 
- /* ---- Блок команд ---- */
+ /* Блок команд */
  struct StmtNode *stmt_block(struct StmtList *block, int line)
  {
    struct StmtNode *stmt = stmt_new(ST_BLOCK, line);
@@ -238,7 +238,7 @@
    return stmt;
  }
  
- /* ---- Условие if ---- */
+ /* Условие if */
  struct StmtNode *stmt_if(struct ExprNode *cond,
                      struct StmtList *block,
                      struct StmtNode *else_branch,
@@ -251,7 +251,7 @@
    return stmt;
  }
  
- /* ---- Цикл for ---- */
+ /* Цикл for */
  struct StmtNode *stmt_for(struct StmtNode *init,
                         struct ExprNode *cond,
                         struct StmtNode *post,
@@ -266,7 +266,7 @@
    return stmt;
  }
 
- /* ---- Перебор for-in ---- */
+ /* Перебор for-in */
  struct StmtNode *stmt_for_in(struct ExprList *lhs,
                            struct ExprNode *expr,
                            struct StmtList *block,
@@ -279,7 +279,7 @@
    return stmt;
  } 
 
- /* ---- Условие when ---- */
+ /* Условие when */
  struct StmtNode *stmt_when(struct ExprNode *cond,
                         struct StmtList *block,
                         struct StmtNode *else_branch,
@@ -292,7 +292,7 @@
    return stmt;
  }
 
- /* ---- Switch ---- */
+ /* Switch */
  struct StmtNode *stmt_switch(struct StmtNode *init,
                            struct ExprNode *cond,
                            struct CaseList *cases,
@@ -305,7 +305,7 @@
    return stmt;
  }
 
- /* ---- Оператор с меткой ---- */
+ /* Оператор с меткой */
  struct StmtNode *stmt_labeled(char *label,
                            struct StmtNode *body,
                            int line)
@@ -316,7 +316,7 @@
    return stmt;
  }
 
- /* ---- Директива ---- */
+ /* Директива */
  struct StmtNode *stmt_directive(char *directive,
                               struct StmtNode *body,
                               int line)
@@ -327,7 +327,7 @@
    return stmt;
  }
 
- /* ---------------- Ветки switch/case ---------------- */
+ /* Ветки switch/case */
  struct CaseNode *case_new(struct ExprList *values, 
                         struct StmtList *body,
                         int fallthrough, 
@@ -363,6 +363,71 @@
    }
    return list;
  }
+ 
+ /* ---------------- Элементы enum ---------------- */
+ struct EnumItemNode *enum_item_new(char *name, struct ExprNode *value, int line)
+ {
+   struct EnumItemNode *item = checked_calloc(1, sizeof *item);
+   item->Name = name;
+   item->Value = value;
+   item->Line = line;
+   return item;
+ }
+
+ struct EnumItemList *enumlist_new(struct EnumItemNode *item)
+ {
+   struct EnumItemList *list = checked_calloc(1, sizeof *list);
+   list->First = list->Last = item;
+   return list;
+ }
+
+ struct EnumItemList *enumlist_append(struct EnumItemList *list,
+                                 struct EnumItemNode *item)
+ {
+   if (list == NULL) return enumlist_new(item);
+   if (item == NULL) return list;
+   if (list->First == NULL) {
+      list->First = list->Last = item;
+   } else {
+      list->Last->Next = item;
+      list->Last = item;
+   }
+   return list;
+ }
+
+ 
+ /* ---------------- Атрибуты ---------------- */
+
+ struct AttrNode *attr_new(char *name, struct ExprNode *value, int line)
+ {
+   struct AttrNode *attr = checked_calloc(1, sizeof *attr);
+   attr->Name = name;
+   attr->Value = value;
+   attr->Line = line;
+   return attr;
+ }
+
+ struct AttrList *attrlist_new(struct AttrNode *attr)
+ {
+   struct AttrList *list = checked_calloc(1, sizeof *list);
+   list->First = list->Last = attr;
+   return list;
+ }
+
+ struct AttrList *attrlist_append(struct AttrList *list, struct AttrNode *attr)
+ {
+   if (list == NULL) return attrlist_new(attr);
+   if (attr == NULL) return list;
+   if (list->First == NULL) {
+      list->First = list->Last = attr;
+   } else {
+      list->Last->Next = attr;
+      list->Last = attr;
+   }
+   return list;
+ }
+
+
 
 
  

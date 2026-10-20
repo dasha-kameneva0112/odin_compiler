@@ -88,4 +88,24 @@
     struct CaseList *caselist_new(struct CaseNode *node);
     struct CaseList *caselist_append(struct CaseList *list, struct CaseNode *item);
  
+    /* ---------------- Элементы enum ---------------- */
+    struct EnumItemNode *enum_item_new(char *name,
+                                   struct ExprNode *value,
+                                   int line);
+
+    struct EnumItemList *enumlist_new(struct EnumItemNode *item);
+
+    struct EnumItemList *enumlist_append(struct EnumItemList *list,
+                                    struct EnumItemNode *item);
+
+    /* ---------------- Атрибуты ---------------- */
+    struct AttrNode *attr_new(char *name,
+                        struct ExprNode *value,
+                        int line);
+
+    struct AttrList *attrlist_new(struct AttrNode *attr);
+
+    struct AttrList *attrlist_append(struct AttrList *list,
+                                struct AttrNode *attr);
+                                    
     #endif
