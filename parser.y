@@ -34,6 +34,7 @@ void yyerror(const char *s);
 
 %code {
         #include "tree_creators.h"
+        #include "tree_print.h"
 }
 
 %locations
@@ -287,7 +288,7 @@ stmt_list: stmt
          ;
              
 /* ---- Один оператор ---- */
-stmt: simple_stmt
+stmt: simple_stmt 
     | block
     | if_stmt
     | for_stmt
@@ -322,7 +323,8 @@ labelable: block
    x: int : 5 (const), 
    x += 1, 
    f()              */
-simple_stmt: expr_list '=' expr_list
+simple_stmt:   expr        { print_expr($1); }  /* ---- ЗАГЛУШКА ---- */
+| expr_list '=' expr_list
            | expr_list OP_DECL_INFERRED expr_list
            | expr_list OP_DECL_TYPED expr_list
            | expr_list ':' type_expr
