@@ -75,9 +75,10 @@ void yyerror(const char *s);
 %token LEX_ERROR
 
 /* --- Нетерминалы--- */
-%type <expr_node> expr            /* --- Expression *--- */
-%type <expr_list_node> expr_list arg_list arg_list_op    /* --- ExprList *--- */
+%type <expr_node> expr            
+%type <expr_list_node> expr_list arg_list arg_list_op   
 %type <id_list_node> id_list
+%type <type_expr_node> type_expr type_core base_type 
 
 /* --- Приоритеты и ассоциативность --- */
 %right '?' IF WHEN
@@ -182,24 +183,24 @@ const_decl:ID OP_DECL_TYPED expr
           ;
 
 /* --- Тип - имя или составной --- */
-type_expr:ID
-         | type_core
+type_expr:ID                                           { $$ = mk_type_name($1, @1.first_line); }     
+         | type_core                                   { $$ = $1; }
          ;
 
 /* --- Составные типы --- */
-type_core:base_type
-         | '^' type_expr
-         | '[' ']' type_expr
-         | '[' expr ']' type_expr
-         | '[' DYNAMIC ']' type_expr
-         | MAP '[' type_expr ']' type_expr
-         | PROC '(' param_list_opt ')' return_type
-         | STRUCT '{' field_list_opt '}'
-         | ENUM '{' enum_body_opt '}'
-         | UNION '{' field_list_opt '}'
-         | BIT_SET '[' type_expr ']'
-         | DISTINCT type_expr
-         | MATRIX '[' expr ',' expr ']' type_expr
+type_core:base_type                                    { $$ = $1; }
+         | '^' type_expr                               { $$ = mk_type_elem(TY_POINTER,$2,@1.first_line); }
+         | '[' ']' type_expr                           { $$ = mk_type_elem(TY_SLICE,$3,@1.first_line); }
+         | '[' expr ']' type_expr                      { $$ = mk_type_array($2,$4,@1.first_line); }
+         | '[' DYNAMIC ']' type_expr                   { $$ = mk_type_elem(TY_DYN_ARRAY,$4,@1.first_line); }
+         | MAP '[' type_expr ']' type_expr             { $$ = mk_type_map($3,$5,@1.first_line); }
+         | PROC '(' param_list_opt ')' return_type     { /* ЗАГЛУШКА*/ }
+         | STRUCT '{' field_list_opt '}'               {  /* ЗАГЛУШКА*/ }
+         | ENUM '{' enum_body_opt '}'                  {  /* ЗАГЛУШКА*/ }
+         | UNION '{' field_list_opt '}'                {  /* ЗАГЛУШКА*/ }
+         | BIT_SET '[' type_expr ']'                   { $$ = mk_type_elem(TY_BIT_SET,$3,@1.first_line); }
+         | DISTINCT type_expr                          { $$ = mk_type_elem(TY_DISTINCT,$2,@1.first_line); }
+         | MATRIX '[' expr ',' expr ']' type_expr      { $$ = mk_type_matrix($3,$5,$7,@1.first_line); }
          ;
 
 /* ---- Поля структуры ---- */
@@ -222,39 +223,39 @@ foreign_decl:FOREIGN IMPORT ID STRING_LIT
             ;
 
 /* ---------- ВСТРОЕННЫЕ ТИПЫ ---------- */
-base_type: BOOL 
-         | B8 
-         | B16 
-         | B32 
-         | B64
-         | INT 
-         | I8 
-         | I16 
-         | I32 
-         | I64 
-         | I128
-         | UINT 
-         | U8 
-         | U16 
-         | U32 
-         | U64 
-         | U128 
-         | UINTPTR 
-         | F16 
-         | F32 
-         | F64
-         | COMPLEX32 
-         | COMPLEX64 
-         | COMPLEX128
-         | QUATERNION64 
-         | QUATERNION128 
-         | QUATERNION256
-         | STRING 
-         | CSTRING 
-         | BYTE 
-         | RUNE 
-         | RAWPTR 
-         | ANY
+base_type: BOOL                              {$$ = mk_type_base(BT_BOOL, @1.first_line);}
+         | B8                                {$$ = mk_type_base(BT_B8, @1.first_line);}
+         | B16                               {$$ = mk_type_base(BT_B16, @1.first_line);}
+         | B32                               {$$ = mk_type_base(BT_B32, @1.first_line);}
+         | B64                               {$$ = mk_type_base(BT_B64, @1.first_line);}
+         | INT                               {$$ = mk_type_base(BT_INT, @1.first_line);}
+         | I8                                {$$ = mk_type_base(BT_I8, @1.first_line);}
+         | I16                               {$$ = mk_type_base(BT_I16, @1.first_line);}
+         | I32                               {$$ = mk_type_base(BT_I32, @1.first_line);}
+         | I64                               {$$ = mk_type_base(BT_I64, @1.first_line);}
+         | I128                              {$$ = mk_type_base(BT_I128, @1.first_line);}
+         | UINT                              {$$ = mk_type_base(BT_UINT, @1.first_line);}
+         | U8                                {$$ = mk_type_base(BT_U8, @1.first_line);}
+         | U16                               {$$ = mk_type_base(BT_U16, @1.first_line);}
+         | U32                               {$$ = mk_type_base(BT_U32, @1.first_line);}
+         | U64                               {$$ = mk_type_base(BT_U64, @1.first_line);}
+         | U128                              {$$ = mk_type_base(BT_U128, @1.first_line);}
+         | UINTPTR                           {$$ = mk_type_base(BT_UINTPTR, @1.first_line);}
+         | F16                               {$$ = mk_type_base(BT_F16, @1.first_line);}
+         | F32                               {$$ = mk_type_base(BT_F32, @1.first_line);}
+         | F64                               {$$ = mk_type_base(BT_F64, @1.first_line);}
+         | COMPLEX32                         {$$ = mk_type_base(BT_COMPLEX32, @1.first_line);}
+         | COMPLEX64                         {$$ = mk_type_base(BT_COMPLEX64, @1.first_line);}
+         | COMPLEX128                        {$$ = mk_type_base(BT_COMPLEX128, @1.first_line);}
+         | QUATERNION64                      {$$ = mk_type_base(BT_QUATERNION64, @1.first_line);}
+         | QUATERNION128                     {$$ = mk_type_base(BT_QUATERNION128, @1.first_line);}
+         | QUATERNION256                     {$$ = mk_type_base(BT_QUATERNION256, @1.first_line);}
+         | STRING                            {$$ = mk_type_base(BT_STRING, @1.first_line);}
+         | CSTRING                           {$$ = mk_type_base(BT_CSTRING, @1.first_line);}
+         | BYTE                              {$$ = mk_type_base(BT_BYTE, @1.first_line);}
+         | RUNE                              {$$ = mk_type_base(BT_RUNE, @1.first_line);}
+         | RAWPTR                            {$$ = mk_type_base(BT_RAWPTR, @1.first_line);}
+         | ANY                               {$$ = mk_type_base(BT_ANY, @1.first_line);}
          ;
 
 /* ---- Поля enum ---- */
@@ -323,8 +324,7 @@ labelable: block
    x: int : 5 (const), 
    x += 1, 
    f()              */
-simple_stmt:   expr        { print_expr($1); }  /* ---- ЗАГЛУШКА ---- */
-| expr_list '=' expr_list
+simple_stmt: expr_list '=' expr_list
            | expr_list OP_DECL_INFERRED expr_list
            | expr_list OP_DECL_TYPED expr_list
            | expr_list ':' type_expr
@@ -344,7 +344,7 @@ simple_stmt:   expr        { print_expr($1); }  /* ---- ЗАГЛУШКА ---- */
            | expr OP_SHR_ASSIGN expr      /* >>= */
            | expr OP_LOG_AND_ASSIGN expr  /* &&= */
            | expr OP_LOG_OR_ASSIGN expr   /* ||= */
-           | expr
+           | expr                                     { print_expr($1); }  /* ---- ЗАГЛУШКА ---- */
            ;
 
 /* ---- Необязательный простой оператор ---- */
@@ -512,7 +512,7 @@ expr: ID                                   { $$ = new_expr(E_ID, @$.first_line);
     | expr '.' ID                          { $$ = mk_unary(E_SELECTOR, $1, @$.first_line); $$ -> Str = $3;}
 
 /* ---- приведение типа ---- */
-    | CAST '(' type_expr ')' expr %prec UNARY  { $$ = mk_unary(E_CAST, $5, @$.first_line); /* CastType заполним на этапе типов */}
+    | CAST '(' type_expr ')' expr %prec UNARY  { $$ = mk_unary(E_CAST, $5, @$.first_line);  $$ -> CastType = $3; }
     ;
 
 /* ---- аргументы вызова функции ---- */

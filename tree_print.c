@@ -1,6 +1,48 @@
 #include <stdio.h>
 #include "tree_print.h"
 
+static void print_rec(const struct ExprNode* e, int depth, const char* role);
+static void print_type_rec(const struct TypeNode* t, int depth, const char* role);
+
+static const char* type_kind_name[] = {
+    "TY_NAME", "TY_BASE", "TY_POINTER", "TY_SLICE", "TY_ARRAY", "TY_DYN_ARRAY",
+    "TY_MAP", "TY_PROC", "TY_STRUCT", "TY_ENUM", "TY_UNION", "TY_BIT_SET",
+    "TY_DISTINCT", "TY_MATRIX"
+};
+
+/* порядок такой же, как в enum BaseType */
+static const char* base_type_name[] = {
+    "bool", "b8", "b16", "b32", "b64",
+    "int", "i8", "i16", "i32", "i64", "i128",
+    "uint", "u8", "u16", "u32", "u64", "u128", "uintptr",
+    "f16", "f32", "f64",
+    "complex32", "complex64", "complex128",
+    "quaternion64", "quaternion128", "quaternion256",
+    "string", "cstring", "byte", "rune", "rawptr", "any"
+};
+
+static void print_type_rec(const struct TypeNode* t, int depth, const char* role)
+{
+    int i;
+
+    for (i = 0; i < depth; i++)
+        printf("    ");
+    if (role)
+        printf("%s: ", role);
+
+    printf("%s", type_kind_name[t->Kind]);
+    if (t->Kind == TY_NAME)
+        printf(" %s", t->Name ? t->Name : "(null)");
+    if (t->Kind == TY_BASE)
+        printf(" %s", base_type_name[t->Base]);
+    printf("  (line %d)\n", t->Line);
+
+    if (t->Key)  print_type_rec(t->Key, depth + 1, "Key");
+    if (t->Len)  print_rec(t->Len, depth + 1, "Len");
+    if (t->Cols) print_rec(t->Cols, depth + 1, "Cols");
+    if (t->Elem) print_type_rec(t->Elem, depth + 1, "Elem");
+}
+
 /* Название вида узла: по нему видно, какое правило сработало */
 static const char *expr_name(enum ExprType t)
 {
@@ -104,6 +146,7 @@ static void print_rec(const struct ExprNode *e, int depth, const char *role)
     if (e->Cond)  print_rec(e->Cond,  depth + 1, "Cond");
     if (e->Left)  print_rec(e->Left,  depth + 1, "Left");
     if (e->Right) print_rec(e->Right, depth + 1, "Right");
+    if (e->CastType) print_type_rec(e->CastType, depth + 1, "Type");
 
     if (e->Type == E_CALL)
     {

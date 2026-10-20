@@ -98,8 +98,74 @@
 
  struct IdList *idlist_append(struct IdList *list, char *name, int line)
  {
-   struct IdentNode *id = ident_new(name, line);
+   struct IdentNode *id = ident_new(name, *line);
    list->Last->Next = id;
    list->Last = id;
    return list;
+ }
+
+ /* ---- Типы ---- */
+ struct TypeNode *new_type(enum TypeKind kind, int line)
+ {
+     struct TypeNode *type = calloc(1, sizeof(type));
+     if (!type)
+     {
+         fprintf(stderr, "out of memory\n");
+         exit(1);
+     }
+     type->Kind = kind;
+	 type->Line = line;
+	 return type;
+ }
+
+ /* MyType -> Name */
+ struct TypeNode *mk_type_name(char* name, int line)
+ {
+     struct TypeNode *type = new_type(TY_NAME, line);
+     type->Name = name;
+     return type;
+ }
+
+ /* int, f32, string ... -> Base */
+ struct TypeNode* mk_type_base(enum BaseType base, int line)
+ {
+     struct TypeNode* type = new_type(TY_BASE, line);
+     type->Base = base;
+     return type;
+ }
+
+ /* ^T, []T, [dynamic]T, bit_set[T], distinct T -> один вложенный тип в Elem */
+ struct TypeNode* mk_type_elem(enum TypeKind kind, struct TypeNode* elem, int line)
+ {
+     struct TypeNode* type = new_type(kind, line);
+     type->Elem = elem;
+     return type;
+ }
+
+ /* [N]T -> Len, Elem */
+ struct TypeNode* mk_type_array(struct ExprNode* len, struct TypeNode* elem, int line)
+ {
+	 struct TypeNode* type = new_type(TY_ARRAY, line);
+	 type->Len = len;
+	 type->Elem = elem;
+     return type;
+ }
+
+ /* map[K]V -> Key, Elem */
+ struct TypeNode *mk_type_map(struct TypeNode* key, struct TypeNode* elem, int line)
+ {
+     struct TypeNode *type = new_type(TY_MAP, line);
+     type->Key = key;
+     type->Elem = elem;
+     return type;
+ }
+
+ /* matrix[R, C]T -> Len (R), Cols (C), Elem */
+ struct TypeNode *mk_type_matrix(struct ExprNode* rows, struct ExprNode* cols, struct TypeNode* elem, int line)
+ {
+     struct TypeNode* type = new_type(TY_MATRIX, line);
+     type->Len = rows;
+     type->Cols = cols;
+     type->Elem = elem;
+     return type;
  }
