@@ -79,6 +79,13 @@ void yyerror(const char *s);
 %type <expr_list_node> expr_list arg_list arg_list_op   
 %type <id_list_node> id_list
 %type <type_expr_node> type_expr type_core base_type 
+%type <field_decl_node> param field_decl
+%type <field_list_node> param_list param_list_opt field_list field_list_opt
+%type <type_list_node> return_type return_type_list
+%type <enum_item_node> enum_item
+%type <enum_item_list_node> enum_body enum_body_opt
+
+%type <enum_item_list_node>
 
 /* --- Приоритеты и ассоциативность --- */
 %right '?' IF WHEN
@@ -136,15 +143,15 @@ proc_decl: ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
          ;
 
 /* --- Список пораметров --- */
-param_list_opt: %empty
-              | param_list
+param_list_opt: %empty                  { $$ = NULL; }
+              | param_list              { $$ = $1; }
               ;
 
-param_list:param
-          | param_list ',' param
+param_list:param                        { $$ = fieldlist_new($1);}
+          | param_list ',' param        { $$ = fieldlist_append($1,$3);}
           ;
 
-param: id_list ':' type_expr
+param: id_list ':' type_expr            { $$ = field_new($1,$3,@1.first_line);}
      ;
 
 /* --- Список имен --- */
@@ -154,13 +161,13 @@ id_list: ID                         { $$ = idlist_new($1, @1.first_line); }
        ;
        
 /* --- Тип возвращаемого значения --- */
-return_type: %empty
-           | OP_ARROW type_expr
-           | OP_ARROW '(' return_type_list ')'
+return_type: %empty                                  { $$ = NULL;}
+           | OP_ARROW type_expr                      { $$ = typelist_new($2);}
+           | OP_ARROW '(' return_type_list ')'       { $$ = $3; }
            ;
 
-return_type_list:type_expr
-                | return_type_list ',' type_expr
+return_type_list:type_expr                           { $$ = typelist_new($1);}
+                | return_type_list ',' type_expr     { $$ = typelist_append($1, $3);}
                 ;
 
 /* ---- Переменные и типизированные константы (общий префикс id_
@@ -194,27 +201,27 @@ type_core:base_type                                    { $$ = $1; }
          | '[' expr ']' type_expr                      { $$ = mk_type_array($2,$4,@1.first_line); }
          | '[' DYNAMIC ']' type_expr                   { $$ = mk_type_elem(TY_DYN_ARRAY,$4,@1.first_line); }
          | MAP '[' type_expr ']' type_expr             { $$ = mk_type_map($3,$5,@1.first_line); }
-         | PROC '(' param_list_opt ')' return_type     { /* ЗАГЛУШКА*/ }
-         | STRUCT '{' field_list_opt '}'               {  /* ЗАГЛУШКА*/ }
-         | ENUM '{' enum_body_opt '}'                  {  /* ЗАГЛУШКА*/ }
-         | UNION '{' field_list_opt '}'                {  /* ЗАГЛУШКА*/ }
+         | PROC '(' param_list_opt ')' return_type     { $$ = mk_type_proc($3, $5, @1.first_line); }
+         | STRUCT '{' field_list_opt '}'               { $$ = mk_type_fields(TY_STRUCT, $3, @1.first_line); }
+         | ENUM '{' enum_body_opt '}'                  { $$ = mk_type_enum($3, @1.first_line);  }
+         | UNION '{' field_list_opt '}'                { $$ = mk_type_fields(TY_UNION, $3, @1.first_line);  }
          | BIT_SET '[' type_expr ']'                   { $$ = mk_type_elem(TY_BIT_SET,$3,@1.first_line); }
          | DISTINCT type_expr                          { $$ = mk_type_elem(TY_DISTINCT,$2,@1.first_line); }
          | MATRIX '[' expr ',' expr ']' type_expr      { $$ = mk_type_matrix($3,$5,$7,@1.first_line); }
          ;
 
 /* ---- Поля структуры ---- */
-field_list_opt: %empty
-              | field_list
-              | field_list ','
-              | field_list ';'
+field_list_opt: %empty                      { $$ = NULL; }
+              | field_list                  { $$ = $1; }
+              | field_list ','              { $$ = $1; }
+              | field_list ';'              { $$ = $1; }
               ;
 
-field_list: field_decl
-          | field_list ',' field_decl
+field_list: field_decl                      { $$ = fieldlist_new($1); }
+          | field_list ',' field_decl       { $$ = fieldlist_append($1, $3); }
           ;
 
-field_decl: id_list ':' type_expr
+field_decl: id_list ':' type_expr           { $$ = field_new($1,$3,@1.first_line); }
           ;
 
   /* ---- Объявление функций/переменных из внешних библиотек ---- */
@@ -259,19 +266,19 @@ base_type: BOOL                              {$$ = mk_type_base(BT_BOOL, @1.firs
          ;
 
 /* ---- Поля enum ---- */
-enum_body_opt: %empty
-             | enum_body
-             | enum_body ','
-             | enum_body ';'
+enum_body_opt: %empty                                  { $$ = NULL; }
+             | enum_body                                { $$ = $1; }
+             | enum_body ','                            { $$ = $1; }
+             | enum_body ';'                            { $$ = $1; }
              ;
 
-enum_body: enum_item
-         | enum_body ',' enum_item
+enum_body: enum_item                                    { $$ = enumlist_new($1); }
+         | enum_body ',' enum_item                      { $$ = enumlist_append($1, $3); }
          ;
 
 enum_item:
-         ID
-         | ID '=' expr
+         ID                                             { $$ = enum_item_new($1, NULL, @1.first_line); }
+         | ID '=' expr                                  { $$ = enum_item_new($1, $3, @1.first_line); }
          ;
 
 /* ---- Блоки кода ---- */

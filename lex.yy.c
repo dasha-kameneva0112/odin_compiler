@@ -1,6 +1,5 @@
-#line 1 "lex.yy.c"
 
-#line 3 "lex.yy.c"
+#line 2 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -840,8 +839,8 @@ static int cur_line = 1, cur_col = 1;
     }                                                               \
     yylloc.last_line = cur_line; yylloc.last_column = cur_col;
 
+#line 842 "lex.yy.c"
 #line 843 "lex.yy.c"
-#line 844 "lex.yy.c"
 
 #define INITIAL 0
 #define ST_COMMENT 1
@@ -856,7 +855,7 @@ static int cur_line = 1, cur_col = 1;
  */
 #include <unistd.h>
 #endif
-    
+
 #ifndef YY_EXTRA_TYPE
 #define YY_EXTRA_TYPE void *
 #endif
@@ -1072,7 +1071,7 @@ YY_DECL
     char *buf = string;
 
 
-#line 1075 "lex.yy.c"
+#line 1074 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -2060,7 +2059,7 @@ YY_RULE_SETUP
 #line 281 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 2063 "lex.yy.c"
+#line 2062 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

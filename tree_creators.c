@@ -16,14 +16,7 @@
  /* Функции построения синтаксического дерева */
  struct ExprNode *new_expr(enum ExprType type, int line)
  {
-    struct ExprNode *expr = calloc(1, sizeof *expr);
-
-    if(!expr)
-    {
-        fprintf(stderr, "out of memory");
-        exit (1);
-    }
-
+    struct ExprNode *expr = checked_calloc(1, sizeof *expr);
     expr->Type = type;
     expr->Line = line;
     return expr;
@@ -59,13 +52,7 @@
 
  struct ExprList *list_new(struct ExprNode *expr)
  {
-   struct ExprList *list = calloc(1, sizeof *list);
-   if (!list)
-   {
-    fprintf(stderr, "out of memory\n"); 
-    exit(1);
-   } 
-
+   struct ExprList *list = checked_calloc(1, sizeof *list);
    list->First = expr;
    list->Last = expr;
    return list;
@@ -82,13 +69,7 @@
  /* ---- Список имён: a, b, c ---- */
  struct IdentNode *ident_new(char *name, int line)
  {
-   struct IdentNode *id = calloc (1, sizeof *id);
-   if(!id)
-   {
-      fprintf(stderr, "out of memory\n"); 
-      exit(1);
-   }
-
+   struct IdentNode *id = checked_calloc (1, sizeof *id);
    id->Name = name;
    id->Line = line;
    return id;
@@ -96,12 +77,7 @@
 
  struct IdList *idlist_new(char *name, int line)
  {
-   struct IdList *list = calloc(1, sizeof *list);
-   if (!list)
-   {
-       fprintf(stderr, "out of memory\n"); 
-       exit(1);
-   }
+   struct IdList *list = checked_calloc(1, sizeof *list);
    list->First = ident_new(name, line);
    list->Last = list->First;
    return list;
@@ -109,7 +85,7 @@
 
  struct IdList *idlist_append(struct IdList *list, char *name, int line)
  {
-   struct IdentNode *id = ident_new(name, *line);
+   struct IdentNode *id = ident_new(name, line);
    list->Last->Next = id;
    list->Last = id;
    return list;
@@ -118,15 +94,10 @@
  /* ---- Типы ---- */
  struct TypeNode *new_type(enum TypeKind kind, int line)
  {
-     struct TypeNode *type = calloc(1, sizeof(type));
-     if (!type)
-     {
-         fprintf(stderr, "out of memory\n");
-         exit(1);
-     }
+     struct TypeNode *type = checked_calloc(1, sizeof *type);
      type->Kind = kind;
-	 type->Line = line;
-	 return type;
+	   type->Line = line;
+	   return type;
  }
 
  /* MyType -> Name */
@@ -493,8 +464,69 @@
    return list;
  }
 
+//  конструкторы для полей и списков типов
+struct FieldNode *field_new(struct IdList *name, struct TypeNode *type, int line)
+{
+   struct FieldNode *fileld = checked_calloc(1, sizeof *fileld);
+   fileld->Names = name;
+   fileld->Type = type;
+   fileld->Line = line;
+   return fileld;
+}
+
+struct FieldList *fieldlist_new(struct FieldNode *fileld)
+{
+   struct FieldList *list = checked_calloc(1, sizeof *list);
+   list->First = fileld;
+   list->Last = fileld;
+   return list;
+}
+
+struct FieldList *fieldlist_append(struct FieldList *list, struct FieldNode *fileld)
+{
+   list->Last->Next = fileld;
+   list->Last = fileld;
+   return list;
+}
+
+struct TypeList *typelist_new(struct TypeNode *type)
+{
+   struct TypeList *list = checked_calloc(1, sizeof *list);
+   list->First = type;
+   list->Last = type;
+   return list;
+}
+
+struct TypeList *typelist_append(struct TypeList *list, struct TypeNode *type)
+{
+   list->Last->Next = type;
+   list->Last = type;
+   return list;
+}
+
+/* struct { ... } / union { ... } -> Fields */
+struct TypeNode *mk_type_fields(enum TypeKind kind, struct FieldList *fields, int line)
+{
+   struct TypeNode *type = new_type(kind, line);
+   type->Fields = fields;      /* может быть NULL, если полей нет */
+   return type;
+}
 
 
+/* enum { A, B = 5 } -> Items */
+struct TypeNode *mk_type_enum(struct EnumItemList *items, int line)
+{
+   struct TypeNode *type = new_type(TY_ENUM, line);
+   type->Items = items;
+   return type;
+}
 
- 
+ /* proc(a: int) -> int -> Params, Results */
+struct TypeNode *mk_type_proc(struct FieldList *params, struct TypeList *results, int line)
+{
+   struct TypeNode *type = new_type(TY_PROC, line);
+   type->Params = params;
+   type->Results = results;    /* NULL, если ничего не возвращает */
+   return type;
+}
 
