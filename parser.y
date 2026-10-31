@@ -15,14 +15,15 @@ void yyerror(const char *s);
             double value;
             char unit;
             } imag_val;   /* 3.5i -> {3.5, 'i'} */
+}
 
 %locations
 %define parse.error verbose
 
 /* --- Ключевые слова языка --- */
-%token ASM AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
+%token AUTO_CAST BIT_FIELD BIT_SET BREAK CASE CAST
 %token CONTEXT CONTINUE DEFER DISTINCT DO DYNAMIC ELSE ENUM FALLTHROUGH
-%token FOR FOREIGN IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
+%token FOR IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
 %token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH
 %token TYPEID UNION USING WHEN WHERE
 
@@ -96,7 +97,6 @@ decl: decl_core ';'
 decl_core: proc_decl
          | var_decl
          | const_decl
-         | foreign_decl
          | attribute decl_core
          ;
 
@@ -190,45 +190,32 @@ field_list: field_decl
 field_decl: id_list ':' type_expr         
           ;
 
-  /* ---- Объявление функций/переменных из внешних библиотек ---- */
-foreign_decl:FOREIGN IMPORT ID STRING_LIT
-            | FOREIGN block
-            ;
-
 /* ---------- ВСТРОЕННЫЕ ТИПЫ ---------- */
 base_type: BOOL                          
-         | B8                             
-         | B16                             
-         | B32                              
-         | B64                              
+         | B8            //  ?                  
+         | B16           //  ?                  
+         | B32           //  ?                   
+         | B64           //  ?                    
          | INT                            
          | I8                              
          | I16                              
          | I32                              
-         | I64                             
-         | I128                            
+         | I64                           
          | UINT                            
          | U8                             
          | U16                        
          | U32                              
-         | U64                            
-         | U128                            
-         | UINTPTR                         
-         | F16                            
+         | U64                          
+         | UINTPTR       //  ?                        
          | F32                            
-         | F64                           
-         | COMPLEX32                       
-         | COMPLEX64                       
-         | COMPLEX128                  
-         | QUATERNION64                    
-         | QUATERNION128                   
-         | QUATERNION256                  
+         | F64                    
+         | COMPLEX64     //  ?                   
+         | COMPLEX128    //  ?                              
          | STRING                            
-         | CSTRING                     
+         | CSTRING       //  ?                    
          | BYTE                             
          | RUNE                           
-         | RAWPTR                            
-         | ANY                        
+         | RAWPTR                                             
          ;
 
 /* ---- Поля enum ---- */
@@ -317,7 +304,7 @@ simple_stmt: expr_list '=' expr_list
            | expr OP_SHR_ASSIGN expr      /* >>= */
            | expr OP_LOG_AND_ASSIGN expr  /* &&= */
            | expr OP_LOG_OR_ASSIGN expr   /* ||= */
-           | expr                                     { print_expr($1); }  /* ---- ЗАГЛУШКА ---- */
+           | expr                                     
            ;
 
 /* ---- Необязательный простой оператор ---- */
@@ -408,8 +395,7 @@ when_stmt:
 /* ---- Атрибут  @private (одно слово — токен ATTRIBUTE)
   @(link_name="foo", export)  ---- */
 attribute: ATTRIBUTE 
-         | AT ID
-         | AT ID '(' attr_list ')'
+         | AT '(' attr_list ')'
          ;
 
 attr_list: attr
@@ -487,7 +473,7 @@ expr: ID
     | expr '.' ID                        
 
 /* ---- приведение типа ---- */
-    | CAST '(' type_expr ')' expr %prec UNARY  { $$ = mk_unary(E_CAST, $5, @$.first_line);  $$ -> CastType = $3; }
+    | CAST '(' type_expr ')' expr %prec UNARY 
     ;
 
 /* ---- аргументы вызова функции ---- */

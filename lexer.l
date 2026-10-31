@@ -115,7 +115,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 "true"                    { yylval.int_val = 1; return BOOL_LIT; }
 "false"                   { yylval.int_val = 0; return BOOL_LIT; }
-"asm"                     { return ASM; }
 "auto_cast"               { return AUTO_CAST; }
 "bit_field"               { return BIT_FIELD; }
 "bit_set"                 { return BIT_SET; }
@@ -132,7 +131,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "enum"                    { return ENUM; }
 "fallthrough"             { return FALLTHROUGH; }
 "for"                     { return FOR; }
-"foreign"                 { return FOREIGN; }
 "if"                      { return IF; }
 "import"                  { return IMPORT; }
 "in"                      { return IN; }
