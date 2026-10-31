@@ -70,26 +70,28 @@ void yyerror(const char *s);
 /* ---- Верхний уровень (программа) ----
   package main
   import "core:fmt"
-  main :: proc() { }                        */
+  main :: proc() { }   
+  when ODIN_OS == "linux" { // объявление }  */
 program:
-       package_clause import_list decl_list
+       package_clause top_list 
        ;
+
+top_list: %empty
+        | top_list top_item
+        ;
+
+top_item: import_decl
+        | decl
+        | when_stmt ';'
+        ;
 
 package_clause: PACKAGE ID ';'
               ;
 
-/* --- Список импортов --- */
-import_list: %empty
-           | import_list import_decl
-           ;
-
+// import fmt "core:fmt"   /    import "core:fmt"
 import_decl: IMPORT STRING_LIT ';'
+           | IMPORT ID STRING_LIT ';'
            ;
-
-/* --- Список объявлений верхнего уровня --- */
-decl_list: %empty
-         | decl_list decl
-         ;
 
 decl: decl_core ';'
     ;
@@ -104,8 +106,8 @@ decl_core: proc_decl
   main :: proc() { }
   add  :: proc(a: int, b: int) -> int { }
   foo  :: proc { foo_int, foo_str }        */
-proc_decl: ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
-         | ID OP_DECL_TYPED PROC '{' id_list '}'
+proc_decl: id_list OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
+         | id_list OP_DECL_TYPED PROC '{' id_list '}'
          ;
 
 /* --- Список пораметров --- */
@@ -150,28 +152,33 @@ var_decl:id_list ':' type_expr '=' expr_list
   NAME  :: "hello"
   MyMyInt :: MyInt
   MAX: int : 100   
-  C, D, E: f32 : 1.0, 2.0, 3.0    */
-const_decl:ID OP_DECL_TYPED expr 
-          | ID OP_DECL_TYPED type_core
+  C, D, E: f32 : 1.0, 2.0, 3.0
+  A, B :: 10, 20                */
+const_decl: id_list OP_DECL_TYPED expr 
+          | id_list OP_DECL_TYPED type_core
           | id_list  ':' type_expr ':' expr_list
           ;
 
 /* --- Тип - имя или составной --- */
-type_expr:ID                                            
+type_expr: ID    
+         | ID '.' ID                                        
          | type_core                              
          ;
 
 /* --- Составные типы --- */
 type_core:base_type                                
          | '^' type_expr                          
-         | '[' ']' type_expr                     
+         | '[' ']' type_expr 
+         | '[' '^' ']' type_expr 
+         | '[' '?' ']' type_expr                    
          | '[' expr ']' type_expr                  
          | '[' DYNAMIC ']' type_expr          
          | MAP '[' type_expr ']' type_expr            
          | PROC '(' param_list_opt ')' return_type   
          | STRUCT type_dir_list '{' field_list_opt '}'
-         | UNION  type_dir_list '{' field_list_opt '}'          
-         | ENUM '{' enum_body_opt '}'            
+         | UNION  type_dir_list '{' type_list_opt '}'      // union { int, string }          
+         | ENUM '{' enum_body_opt '}'
+         | ENUM type_expr '{' enum_body_opt '}'       // enum u8 {...}          
          | BIT_SET '[' type_expr ']'                 
          | DISTINCT type_expr                       
          | MATRIX '[' expr ',' expr ']' type_expr    
@@ -198,6 +205,15 @@ type_dir_list: %empty
 type_dir: DIRECTIVE
         | DIRECTIVE '(' expr ')'
         ;
+
+type_list_opt:  %empty 
+             | type_list 
+             | type_list ',' 
+             ;
+
+type_list: type_expr 
+         | type_list ',' type_expr 
+         ;
 
 /* ---------- ВСТРОЕННЫЕ ТИПЫ ---------- */
 base_type: BOOL                          
@@ -264,7 +280,10 @@ stmt: simple_stmt
     | for_stmt
     | switch_stmt
     | when_stmt
-    | expr_list ':' labelable           
+    | expr_list ':' labelable  
+    | expr_list OP_DECL_TYPED type_core              // MyInt :: distinct int (локальные объявления)
+    | expr_list OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block   
+    | expr_list OP_DECL_TYPED PROC '{' id_list '}'         
     | RETURN
     | RETURN expr_list
     | DEFER stmt
