@@ -17,7 +17,6 @@ char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
 
-
 static int cur_line = 1, cur_col = 1;
 #define YY_USER_ACTION                                              \
     yylloc.first_line = cur_line; yylloc.first_column = cur_col;    \
@@ -57,7 +56,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
     int comment_depth = 0;
     char string[20480];
     char charbuf[32];
-    char *buf = string;
+    char *buf = string; 
 %}
 
 "//"[^\n]*                          { /* ничего не возвращаем */ }
@@ -325,8 +324,7 @@ void append_utf8(char *dest, unsigned int codepoint) {
     strcat(dest, utf8);
 }
 
-int odin_lex(void);
-static int last_token = 0;
+
 
 /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
@@ -356,6 +354,10 @@ static int can_end_stmt(int tok)
     }
 }
 
+int odin_lex(void);
+static int last_token = 0;
+static int in_attr = 0, attr_depth = 0;
+
 int yylex(void)
 {
     static int at_eof = 0;
@@ -379,6 +381,22 @@ int yylex(void)
             }
             return 0;
         }
+
+if (tok == AT) {
+    in_attr = 1; 
+    attr_depth = 0;
+} else if (in_attr && attr_depth == 0 && tok != '(') {
+    in_attr = 0;                      
+} else if (in_attr && tok == '(') {
+    attr_depth++;
+} else if (in_attr && tok == ')') {
+    attr_depth--;
+if (attr_depth == 0) { 
+    in_attr = 0; 
+    last_token = ATTRIBUTE;
+    return tok; 
+    }
+}
 
         last_token = tok;
         return tok;
