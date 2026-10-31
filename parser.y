@@ -6,10 +6,6 @@ int yylex(void);
 void yyerror(const char *s);
 %}
 
-%code requires {
-    #include "tree_nodes.h"
-}
-
 %union {
     long long    int_val;  /* целочисленный литерал   */
     double       float_val;  /* вещественный литерал    */
@@ -19,23 +15,6 @@ void yyerror(const char *s);
             double value;
             char unit;
             } imag_val;   /* 3.5i -> {3.5, 'i'} */
-
- /* Узлы синтаксического дерева */
-    struct ExprNode  *expr_node;                       /* Указатель на выражение */
-    struct ExprList    *expr_list_node;                  /* Список выражений */
-    struct TypeNode    *type_expr_node;                  /* Указатель на описание типа */
-    struct IdList      *id_list_node;                    /* Cписок имен */
-    struct FieldNode   *field_decl_node;                 /* Одно объявление полей или параметров */
-    struct FieldList   *field_list_node;                 /* Список таких объявлений */
-    struct TypeList    *type_list_node;                  /* Список типов */
-    struct EnumItemNode    *enum_item_node;                  /* Один элемент enum */
-    struct EnumItemList *enum_item_list_node;            /* Список элементов enum */
-}
-
-%code {
-        #include "tree_creators.h"
-        #include "tree_print.h"
-}
 
 %locations
 %define parse.error verbose
@@ -73,19 +52,6 @@ void yyerror(const char *s);
 %token OP_ARROW OP_DECL_TYPED OP_DECL_INFERRED OP_MOD2 OP_DOLLAR
 
 %token LEX_ERROR
-
-/* --- Нетерминалы--- */
-%type <expr_node> expr            
-%type <expr_list_node> expr_list arg_list arg_list_op   
-%type <id_list_node> id_list
-%type <type_expr_node> type_expr type_core base_type 
-%type <field_decl_node> param field_decl
-%type <field_list_node> param_list param_list_opt field_list field_list_opt
-%type <type_list_node> return_type return_type_list
-%type <enum_item_node> enum_item
-%type <enum_item_list_node> enum_body enum_body_opt
-
-%type <enum_item_list_node>
 
 /* --- Приоритеты и ассоциативность --- */
 %right '?' IF WHEN
