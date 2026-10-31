@@ -17,7 +17,9 @@ char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
 
-
+#define MAX_FILE_TAGS 64
+char *file_tags[MAX_FILE_TAGS];
+int   file_tag_count = 0;           // для директив
 static int cur_line = 1, cur_col = 1;
 #define YY_USER_ACTION                                              \
     yylloc.first_line = cur_line; yylloc.first_column = cur_col;    \
@@ -267,7 +269,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return ATTRIBUTE; }
 "@"                                   { return AT; }
 
-"#+"({LETTER}|_)[A-Za-z_-]*           { yylval.str_val = strdup(yytext); return BUILD_DIRECTIVE; }
+"#+"[^\n]*                            { if (file_tag_count < MAX_FILE_TAGS) file_tags[file_tag_count++] = strdup(yytext + 2); }
 "#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return DIRECTIVE; }
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
@@ -347,7 +349,6 @@ static int can_end_stmt(int tok)
         case COMPLEX32: case COMPLEX64: case COMPLEX128:
         case QUATERNION64: case QUATERNION128: case QUATERNION256:
         case STRING: case CSTRING: case BYTE: case RUNE: case RAWPTR: case ANY:
-        case BUILD_DIRECTIVE:
         case '^': case '?':
         case ')': case ']': case '}':
             return 1;
