@@ -111,6 +111,7 @@ proc_decl: ID OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
 /* --- Список пораметров --- */
 param_list_opt: %empty                 
               | param_list              
+              | param_list ','
               ;
 
 param_list:param                      
@@ -404,6 +405,7 @@ when_stmt:
   @(link_name="foo", export)  ---- */
 attribute: ATTRIBUTE 
          | AT '(' attr_list ')'
+         | AT '(' attr_list ',' ')'
          ;
 
 attr_list: attr
@@ -487,6 +489,7 @@ expr: ID
 /* ---- аргументы вызова функции ---- */
 arg_list_op: %empty                       
            | arg_list                      
+           | arg_list ','
            ;
 
 arg_list: expr                            

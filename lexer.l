@@ -12,14 +12,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include "parser.tab.h"
+#define MAX_FILE_TAGS 64
+char *file_tags[MAX_FILE_TAGS];
+int file_tag_count = 0;
 
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
 
-#define MAX_FILE_TAGS 64
-char *file_tags[MAX_FILE_TAGS];
-int   file_tag_count = 0;           // для директив
+
 static int cur_line = 1, cur_col = 1;
 #define YY_USER_ACTION                                              \
     yylloc.first_line = cur_line; yylloc.first_column = cur_col;    \
@@ -32,13 +33,13 @@ static int cur_line = 1, cur_col = 1;
 %}
 
 DIGIT       [0-9]
-LETTER      [a-zA-Z]
+LETTER      [a-zA-Z\x80-\xFF]
 BIN_DIGIT   [01]
 OCT_DIGIT   [0-7]
 DOZ_DIGIT   [0-9abAB]
 HEX_DIGIT   [0-9a-fA-F]
 
-DECIMAL_LIT     (0|[1-9](_?{DIGIT})*)
+DECIMAL_LIT     {DIGIT}(_?{DIGIT})*
 BINARY_LIT      0b{BIN_DIGIT}(_?{BIN_DIGIT})*
 OCTAL_LIT       0o{OCT_DIGIT}(_?{OCT_DIGIT})*
 DOZENAL_LIT     0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*
@@ -47,7 +48,8 @@ EX_DECIMAL_LIT  0d{DIGIT}(_?{DIGIT})*
 EXPONENT        (e|E)[+-]?{DIGIT}+
 
 INT_LIT     ({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})
-FLOAT_LIT   ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}{EXPONENT}
+FRAC_DIGITS  {DIGIT}(_?{DIGIT})*
+FLOAT_LIT   ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?|{DECIMAL_LIT}{EXPONENT}
 ESC_OCTAL   \\[0-7]{3}
 ESC_HEX     \\x{HEX_DIGIT}{2}
 ESC_UNICODE \\u{HEX_DIGIT}{4}
@@ -59,7 +61,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
     int comment_depth = 0;
     char string[20480];
     char charbuf[32];
-    char *buf = string; 
+    char *buf = string;
 %}
 
 "//"[^\n]*                          { /* ничего не возвращаем */ }
@@ -73,7 +75,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 \"                                  { buf = string; BEGIN(ST_STRING); string[0]='\0'; }
 <ST_STRING>[^\\\"\n]+               { strcat(string, yytext); }
-<ST_STRING>\\\n                     { /* продолжение строки на следующей строке */ }
 <ST_STRING>\n                       { fprintf(stderr, "Lex error: newline in string\n"); BEGIN(INITIAL); return LEX_ERROR; }
 <ST_STRING><<EOF>>                  { fprintf(stderr, "Lex error: unclosed string\n"); BEGIN(INITIAL); return LEX_ERROR; }
 <ST_STRING>\"                       { BEGIN(INITIAL); yylval.str_val = strdup(string); return STRING_LIT; }
@@ -109,6 +110,8 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 <ST_STRING,ST_CHAR>{ESC_UNICODE}         { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
 <ST_STRING,ST_CHAR>{ESC_UNICODE32}       { unsigned int cp = (unsigned int)strtol(yytext+2, NULL, 16); append_utf8(buf, cp); }
 
+
+<ST_STRING,ST_CHAR>\\(.|\n)             { fprintf(stderr, "Lex error: invalid escape sequence\n"); BEGIN(INITIAL); return LEX_ERROR; }
 
 `                                { BEGIN(ST_RAW_STRING); string[0] = '\0'; }
 <ST_RAW_STRING>[^`]+                { strcat(string, yytext); }
@@ -163,10 +166,11 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
 0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
-0|[1-9](_?{DIGIT})*              { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
+{DECIMAL_LIT}/".."               { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }   /* 0..<10: точка принадлежит диапазону */
+{DECIMAL_LIT}                     { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
 
 {FLOAT_LIT}                        { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
-({DECIMAL_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; 
+({INT_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; 
                                      strip_us(yytext, c); 
                                      yylval.imag_val.unit  = c[strlen(c) - 1];      /* 'i', 'j' или 'k' */
                                      c[strlen(c) - 1] = '\0';
@@ -270,11 +274,13 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "@"                                   { return AT; }
 
 "#+"[^\n]*                            { if (file_tag_count < MAX_FILE_TAGS) file_tags[file_tag_count++] = strdup(yytext + 2); }
-"#"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return DIRECTIVE; }
+"#!"[^\n]*                           { /* shebang: комментарий */ }
+"#"[ \t]*({LETTER}|_)({LETTER}|{DIGIT}|_)*  { char *p = yytext + 1; while (*p == ' ' || *p == '\t') p++; yylval.str_val = malloc(strlen(p) + 2); sprintf(yylval.str_val, "#%s", p); return DIRECTIVE; }
 
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
 [ \t\r]+                            { /* пропускаем пробелы */ }
 \n                                  { return '\n'; }
+"\\"[ \t\r]*\n                       { /* \ поглощает перевод строки */ }
 <*>.                                { fprintf(stderr, "Lex error: unknown symbol '%s' at %d:%d\n", yytext, yylloc.first_line, yylloc.first_column); return LEX_ERROR; }
 
 %%
@@ -327,7 +333,9 @@ void append_utf8(char *dest, unsigned int codepoint) {
     strcat(dest, utf8);
 }
 
-
+int odin_lex(void);
+static int last_token = 0;
+static int in_attr = 0, attr_depth = 0;
 
 /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
@@ -348,6 +356,7 @@ static int can_end_stmt(int tok)
         case COMPLEX32: case COMPLEX64: case COMPLEX128:
         case QUATERNION64: case QUATERNION128: case QUATERNION256:
         case STRING: case CSTRING: case BYTE: case RUNE: case RAWPTR: case ANY:
+        case BUILD_DIRECTIVE:
         case '^': case '?':
         case ')': case ']': case '}':
             return 1;
@@ -356,9 +365,14 @@ static int can_end_stmt(int tok)
     }
 }
 
-int odin_lex(void);
-static int last_token = 0;
-static int in_attr = 0, attr_depth = 0;
+static char bracket_stack[256];
+static int  bracket_top = 0;
+
+/* внутри ( ) или [ ] переводы строк не разделяют операторы */
+static int in_brackets(void)
+{
+    return bracket_top > 0 && (bracket_stack[bracket_top - 1] == '(' || bracket_stack[bracket_top - 1] == '[');
+}
 
 int yylex(void)
 {
@@ -367,7 +381,8 @@ int yylex(void)
 
     for (;;) {
         int tok = odin_lex();
-        if (tok == '\n') {      /* решаем, вставить ; или пропустить */
+        if (tok == '\n') {
+            if (in_brackets()) continue;      /* внутри скобок ';' не нужна */
             if (can_end_stmt(last_token)) {
                 last_token = ';';
                 return ';';
@@ -375,7 +390,7 @@ int yylex(void)
             continue;
         }
 
-        if (tok == 0) { /* конец файла: как и перевод строки, может завершать оператор */
+        if (tok == 0) {
             at_eof = 1;
             if (can_end_stmt(last_token)) {
                 last_token = ';';
@@ -384,21 +399,27 @@ int yylex(void)
             return 0;
         }
 
-if (tok == AT) {
-    in_attr = 1; 
-    attr_depth = 0;
-} else if (in_attr && attr_depth == 0 && tok != '(') {
-    in_attr = 0;                      
-} else if (in_attr && tok == '(') {
-    attr_depth++;
-} else if (in_attr && tok == ')') {
-    attr_depth--;
-if (attr_depth == 0) { 
-    in_attr = 0; 
-    last_token = ATTRIBUTE;
-    return tok; 
-    }
-}
+        /* стек открытых скобок */
+        if (tok == '(' || tok == '[' || tok == '{') {
+            if (bracket_top < 256) bracket_stack[bracket_top++] = (char)tok;
+        } else if (tok == ')' || tok == ']' || tok == '}') {
+            if (bracket_top > 0) bracket_top--;
+        }
+
+        if (tok == AT) {
+            in_attr = 1; attr_depth = 0;
+        } else if (in_attr && attr_depth == 0 && tok != '(') {
+            in_attr = 0;
+        } else if (in_attr && tok == '(') {
+            attr_depth++;
+        } else if (in_attr && tok == ')') {
+            attr_depth--;
+            if (attr_depth == 0) {
+                in_attr = 0;
+                last_token = ATTRIBUTE;
+                return tok;
+            }
+        }
 
         last_token = tok;
         return tok;
