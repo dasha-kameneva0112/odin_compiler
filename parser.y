@@ -168,9 +168,9 @@ type_core:base_type
          | '[' DYNAMIC ']' type_expr          
          | MAP '[' type_expr ']' type_expr            
          | PROC '(' param_list_opt ')' return_type   
-         | STRUCT '{' field_list_opt '}'             
+         | STRUCT type_dir_list '{' field_list_opt '}'
+         | UNION  type_dir_list '{' field_list_opt '}'          
          | ENUM '{' enum_body_opt '}'            
-         | UNION '{' field_list_opt '}'             
          | BIT_SET '[' type_expr ']'                 
          | DISTINCT type_expr                       
          | MATRIX '[' expr ',' expr ']' type_expr    
@@ -189,6 +189,14 @@ field_list: field_decl
 
 field_decl: id_list ':' type_expr         
           ;
+
+type_dir_list: %empty
+             | type_dir_list type_dir
+             ;
+
+type_dir: DIRECTIVE
+        | DIRECTIVE '(' expr ')'
+        ;
 
 /* ---------- ВСТРОЕННЫЕ ТИПЫ ---------- */
 base_type: BOOL                          
