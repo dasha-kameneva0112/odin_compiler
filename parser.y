@@ -154,7 +154,7 @@ var_decl:id_list ':' type_expr '=' expr_list
   MAX: int : 100   
   C, D, E: f32 : 1.0, 2.0, 3.0
   A, B :: 10, 20                */
-const_decl: id_list OP_DECL_TYPED expr 
+const_decl: id_list OP_DECL_TYPED expr_list 
           | id_list OP_DECL_TYPED type_core
           | id_list  ':' type_expr ':' expr_list
           ;

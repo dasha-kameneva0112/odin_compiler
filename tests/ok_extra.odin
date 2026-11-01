@@ -9,8 +9,7 @@ import "core:fmt"
 hidden :: proc() {
 }
 
-@(link_name="foo")
-exported :: proc() {
+@(link_name="foo") exported :: proc() {
 }
 
 foo_int :: proc(a: int) -> int {
@@ -23,10 +22,7 @@ foo_str :: proc(a: string) -> string {
 
 foo :: proc { foo_int, foo_str }
 
-Shape :: union {
-    a: int,
-    b: f32,
-}
+Shape :: union { int, f32 }
 
 Perms :: bit_set[Color]
 
