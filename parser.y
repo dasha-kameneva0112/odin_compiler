@@ -25,7 +25,7 @@ void yyerror(const char *s);
 %token CONTEXT CONTINUE DEFER DISTINCT DO DYNAMIC ELSE ENUM FALLTHROUGH
 %token FOR IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
 %token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH
-%token TYPEID UNION WHEN WHERE
+%token TYPEID UNION USING WHEN WHERE
 
 %token BOOL B8 B16 B32 B64 INT I8 I16 I32 I64
 %token UINT U8 U16 U32 U64 UINTPTR
@@ -103,7 +103,8 @@ base_decl: var_decl
         | proc_decl
         ;
 
-attribute_list_opt: attribute_list_opt attribute 
+attribute_list_opt: %empty
+                  | attribute_list_opt attribute
                   ;
 
 /* ---- Процедура ----
@@ -290,6 +291,7 @@ stmt: simple_stmt
     | RETURN expr_list
     | DEFER stmt
     | DIRECTIVE stmt    /* #partial switch x { ... } */
+    | USING expr
     | BREAK
     | BREAK ID                        
     | CONTINUE

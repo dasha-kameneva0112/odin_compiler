@@ -152,6 +152,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "switch"                  { return SWITCH; }
 "typeid"                  { return TYPEID; }
 "union"                   { return UNION; }
+"using"                   { return USING; }
 "when"                    { return WHEN; }
 "where"                   { return WHERE; }
 
