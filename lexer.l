@@ -194,6 +194,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "..="       { return OP_RANGE_INCLUSIVE; }
 "..<"       { return OP_RANGE_EXCLUSIVE; }
 ".."        { return OP_RANGE; }
+"**"        { return OP_EXPAND; } 
 "->"        { return OP_ARROW; }
 
 "&&"        { return OP_LOG_AND; }

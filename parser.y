@@ -48,7 +48,7 @@ void yyerror(const char *s);
 %token OP_LOG_AND_ASSIGN OP_LOG_OR_ASSIGN
 %token OP_LOG_AND OP_LOG_OR OP_AND_NOT OP_SHL OP_SHR
 %token OP_EQ OP_NE OP_LE OP_GE
-%token OP_RANGE OP_RANGE_INCLUSIVE OP_RANGE_EXCLUSIVE
+%token OP_EXPAND OP_RANGE OP_RANGE_INCLUSIVE OP_RANGE_EXCLUSIVE
 %token OP_ARROW OP_DECL_TYPED OP_DECL_INFERRED OP_MOD2 OP_DOLLAR
 
 %token LEX_ERROR
@@ -507,9 +507,13 @@ arg_list_op: %empty
            | arg_list ','
            ;
 
-arg_list: expr                            
-        | arg_list ',' expr               
+arg_list: arg
+        | arg_list ',' arg
         ;
+
+arg: expr
+   | OP_EXPAND expr      
+   ;
 
 %%
 
