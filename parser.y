@@ -25,13 +25,12 @@ void yyerror(const char *s);
 %token CONTEXT CONTINUE DEFER DISTINCT DO DYNAMIC ELSE ENUM FALLTHROUGH
 %token FOR IF IMPORT IN MAP MATRIX NOT_IN OR_BREAK OR_CONTINUE
 %token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH
-%token TYPEID UNION USING WHEN WHERE
+%token TYPEID UNION WHEN WHERE
 
-%token BOOL B8 B16 B32 B64 INT I8 I16 I32 I64 I128
-%token UINT U8 U16 U32 U64 U128 UINTPTR
-%token F16 F32 F64 COMPLEX32 COMPLEX64 COMPLEX128
-%token QUATERNION64 QUATERNION128 QUATERNION256
-%token STRING CSTRING BYTE RUNE RAWPTR ANY
+%token BOOL B8 B16 B32 B64 INT I8 I16 I32 I64
+%token UINT U8 U16 U32 U64 UINTPTR
+%token F32 F64 COMPLEX64 COMPLEX128
+%token STRING CSTRING BYTE RUNE RAWPTR
 
 %token <int_val>   INT_LIT BOOL_LIT
 %token <float_val> FLOAT_LIT
@@ -70,8 +69,7 @@ void yyerror(const char *s);
 /* ---- Верхний уровень (программа) ----
   package main
   import "core:fmt"
-  main :: proc() { }   
-  when ODIN_OS == "linux" { // объявление }  */
+  main :: proc() { }    */
 program:
        package_clause top_list 
        ;
@@ -81,9 +79,12 @@ top_list: %empty
         ;
 
 top_item: import_decl
-        | decl
-        | when_stmt ';'
+        | decl_core optional_semicolon
         ;
+
+optional_semicolon: %empty
+                  | ';'
+                  ;
 
 package_clause: PACKAGE ID ';'
               ;
@@ -93,14 +94,17 @@ import_decl: IMPORT STRING_LIT ';'
            | IMPORT ID STRING_LIT ';'
            ;
 
-decl: decl_core ';'
-    ;
 
-decl_core: proc_decl
-         | var_decl
-         | const_decl
-         | attribute decl_core
+decl_core: attribute_list_opt base_decl
          ;
+
+base_decl: var_decl
+        | const_decl
+        | proc_decl
+        ;
+
+attribute_list_opt: attribute_list_opt attribute 
+                  ;
 
 /* ---- Процедура ----
   main :: proc() { }
@@ -177,8 +181,7 @@ type_core:base_type
          | PROC '(' param_list_opt ')' return_type   
          | STRUCT type_dir_list '{' field_list_opt '}'
          | UNION  type_dir_list '{' type_list_opt '}'      // union { int, string }          
-         | ENUM '{' enum_body_opt '}'
-         | ENUM type_expr '{' enum_body_opt '}'       // enum u8 {...}          
+         | ENUM '{' enum_body_opt '}'          
          | BIT_SET '[' type_expr ']'                 
          | DISTINCT type_expr                       
          | MATRIX '[' expr ',' expr ']' type_expr    
@@ -279,7 +282,6 @@ stmt: simple_stmt
     | if_stmt
     | for_stmt
     | switch_stmt
-    | when_stmt
     | expr_list ':' labelable  
     | expr_list OP_DECL_TYPED type_core              // MyInt :: distinct int (локальные объявления)
     | expr_list OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block   
@@ -288,7 +290,6 @@ stmt: simple_stmt
     | RETURN expr_list
     | DEFER stmt
     | DIRECTIVE stmt    /* #partial switch x { ... } */
-    | USING expr
     | BREAK
     | BREAK ID                        
     | CONTINUE
@@ -411,13 +412,6 @@ fall_tail: FALLTHROUGH
 /* ---- Список выражений ---- */
 expr_list: expr                  
          | expr_list ',' expr 
-         ;
-
-/* ---- Условные операторы when ---- */
-when_stmt:
-         WHEN expr block
-         | WHEN expr block ELSE when_stmt
-         | WHEN expr block ELSE block
          ;
 
 /* ---- Атрибут  @private (одно слово — токен ATTRIBUTE)

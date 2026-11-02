@@ -152,7 +152,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "switch"                  { return SWITCH; }
 "typeid"                  { return TYPEID; }
 "union"                   { return UNION; }
-"using"                   { return USING; }
 "when"                    { return WHEN; }
 "where"                   { return WHERE; }
 
@@ -245,29 +244,21 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "i16"             { return I16; }
 "i32"             { return I32; }
 "i64"             { return I64; }
-"i128"            { return I128; }
 "uint"            { return UINT; }
 "u8"              { return U8; }
 "u16"             { return U16; }
 "u32"             { return U32; }
 "u64"             { return U64; }
-"u128"            { return U128; }
 "uintptr"         { return UINTPTR; }
-"f16"             { return F16; }
 "f32"             { return F32; }
 "f64"             { return F64; }
-"complex32"       { return COMPLEX32; }
 "complex64"       { return COMPLEX64; }
 "complex128"      { return COMPLEX128; }
-"quaternion64"    { return QUATERNION64; }
-"quaternion128"   { return QUATERNION128; }
-"quaternion256"   { return QUATERNION256; }
 "string"          { return STRING; }
 "cstring"         { return CSTRING; }
 "byte"            { return BYTE; }
 "rune"            { return RUNE; }
 "rawptr"          { return RAWPTR; }
-"any"             { return ANY; }
 
 "@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return ATTRIBUTE; }
 "@"                                   { return AT; }
@@ -349,12 +340,11 @@ static int can_end_stmt(int tok)
         case BREAK: case CONTINUE: case FALLTHROUGH:
         case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
         case BOOL: case B8: case B16: case B32: case B64:
-        case INT: case I8: case I16: case I32: case I64: case I128:
-        case UINT: case U8: case U16: case U32: case U64: case U128: case UINTPTR:
-        case F16: case F32: case F64:
-        case COMPLEX32: case COMPLEX64: case COMPLEX128:
-        case QUATERNION64: case QUATERNION128: case QUATERNION256:
-        case STRING: case CSTRING: case BYTE: case RUNE: case RAWPTR: case ANY:
+        case INT: case I8: case I16: case I32: case I64: 
+        case UINT: case U8: case U16: case U32: case U64: case UINTPTR:
+        case F32: case F64:
+        case COMPLEX64: case COMPLEX128:
+        case STRING: case CSTRING: case BYTE: case RUNE: case RAWPTR:
         case BUILD_DIRECTIVE:
         case '^': case '?':
         case ')': case ']': case '}':
