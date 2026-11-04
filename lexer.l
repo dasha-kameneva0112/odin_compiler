@@ -176,16 +176,12 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "/="        { return OP_DIV_ASSIGN; }
 "%="        { return OP_MOD_ASSIGN; }
 "%%="       { return OP_MOD2_ASSIGN; }
-"|="        { return OP_OR_ASSIGN; }
-"~="        { return OP_NOT_ASSIGN; }
-"&="        { return OP_AND_ASSIGN; }
 
 /* диапазоны (for i in 0..<n, case 1..=5) */
 "..="       { return OP_RANGE_INCLUSIVE; }
 "..<"       { return OP_RANGE_EXCLUSIVE; }
 
 ".."        { return OP_RANGE; }
-"**"        { return OP_EXPAND; } 
 "->"        { return OP_ARROW; }
 
 /* логические и сравнения */
@@ -210,9 +206,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "!"         { return '!'; }
 "<"         { return '<'; }
 ">"         { return '>'; }
-"&"         { return '&'; }
-"|"         { return '|'; }
-"~"         { return '~'; }
 "("         { return '('; }
 ")"         { return ')'; }
 "["         { return '['; }
