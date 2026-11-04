@@ -120,6 +120,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "---"                     { return UNDEFINED; }
 "?"                       { return '?'; }
 
+/* ключевые слова */
 "package"                 { return PACKAGE; }
 "import"                  { return IMPORT; }
 "proc"                    { return PROC; }
@@ -149,28 +150,26 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "or_else"                 { return OR_ELSE; }
 "or_return"               { return OR_RETURN; }
 
-
+/* числовые литералы */
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
 0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
 0x{HEX_DIGIT}(_?{HEX_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
 0d{DIGIT}(_?{DIGIT})*            { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
 {DECIMAL_LIT}/".."               { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }   /* 0..<10: точка принадлежит диапазону */
-{DECIMAL_LIT}                     { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
+{DECIMAL_LIT}                    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
+{FLOAT_LIT}                      { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
+({INT_LIT}|{FLOAT_LIT})[ijk]     { char c[128]; 
+                                    strip_us(yytext, c); 
+                                    yylval.imag_val.unit  = c[strlen(c) - 1];      /* 'i', 'j' или 'k' */
+                                    c[strlen(c) - 1] = '\0';
+                                    yylval.imag_val.value = strtod(c, NULL);
+                                    return IMAGINARY_LIT; }
 
-{FLOAT_LIT}                        { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
-({INT_LIT}|{FLOAT_LIT})[ijk]   { char c[128]; 
-                                     strip_us(yytext, c); 
-                                     yylval.imag_val.unit  = c[strlen(c) - 1];      /* 'i', 'j' или 'k' */
-                                     c[strlen(c) - 1] = '\0';
-                                     yylval.imag_val.value = strtod(c, NULL);
-                                     return IMAGINARY_LIT; }
-
+/* ---- операторы ---- */
+/* составное присваивание */
 "&&="       { return OP_LOG_AND_ASSIGN; }
 "||="       { return OP_LOG_OR_ASSIGN; }
-"<<="       { return OP_SHL_ASSIGN; }
-">>="       { return OP_SHR_ASSIGN; }
-"&~="       { return OP_AND_NOT_ASSIGN; }
 "+="        { return OP_ADD_ASSIGN; }
 "-="        { return OP_SUB_ASSIGN; }
 "*="        { return OP_MUL_ASSIGN; }
@@ -181,22 +180,26 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "~="        { return OP_NOT_ASSIGN; }
 "&="        { return OP_AND_ASSIGN; }
 
+/* диапазоны (for i in 0..<n, case 1..=5) */
 "..="       { return OP_RANGE_INCLUSIVE; }
 "..<"       { return OP_RANGE_EXCLUSIVE; }
+
 ".."        { return OP_RANGE; }
 "**"        { return OP_EXPAND; } 
 "->"        { return OP_ARROW; }
 
+/* логические и сравнения */
 "&&"        { return OP_LOG_AND; }
 "||"        { return OP_LOG_OR; }
-"&~"        { return OP_AND_NOT; }
-"<<"        { return OP_SHL; }
-">>"        { return OP_SHR; }
 "=="        { return OP_EQ; }
 "!="        { return OP_NE; }
 "<="        { return OP_LE; }
 ">="        { return OP_GE; }
 "%%"        { return OP_MOD2; }
+
+/* объявления */
+"::"        { return OP_DECL_TYPED; }
+":="        { return OP_DECL_INFERRED; }
 
 "+"         { return '+'; }
 "-"         { return '-'; }
@@ -209,7 +212,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 ">"         { return '>'; }
 "&"         { return '&'; }
 "|"         { return '|'; }
-"^"         { return '^'; }
 "~"         { return '~'; }
 "("         { return '('; }
 ")"         { return ')'; }
@@ -220,11 +222,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 ","         { return ','; }
 ";"         { return ';'; }
 "."         { return '.'; }
-"$"         { return OP_DOLLAR; }
-
-":"         { return ':'; }
-"::"        { return OP_DECL_TYPED; }
-":="        { return OP_DECL_INFERRED; }
+":"         { return ':'; } 
 
 "bool"            { return BOOL; }
 "int"             { return INT; }
@@ -233,13 +231,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "string"          { return STRING; }
 "rune"            { return RUNE; }
 
-"@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return ATTRIBUTE; }
-"@"                                   { return AT; }
-
-"#+"[^\n]*                            { if (file_tag_count < MAX_FILE_TAGS) file_tags[file_tag_count++] = strdup(yytext + 2); }
-"#!"[^\n]*                           { /* shebang: комментарий */ }
-"#"[ \t]*({LETTER}|_)({LETTER}|{DIGIT}|_)*  { char *p = yytext + 1; while (*p == ' ' || *p == '\t') p++; yylval.str_val = malloc(strlen(p) + 2); sprintf(yylval.str_val, "#%s", p); return DIRECTIVE; }
-
+/* идентификаторы и пробелы */
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
 [ \t\r]+                            { /* пропускаем пробелы */ }
 \n                                  { return '\n'; }
@@ -304,21 +296,13 @@ static int can_end_stmt(int tok)
 {
     switch (tok) {
         case ID: 
-        case CONTEXT: 
-        case TYPEID:
         case INT_LIT: case FLOAT_LIT: case STRING_LIT:
         case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
-        case BOOL_LIT: case NIL: case UNDEFINED:
+        case BOOL_LIT: case NIL: 
         case BREAK: case CONTINUE: case FALLTHROUGH:
         case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
-        case BOOL: case B8: case B16: case B32: case B64:
-        case INT: case I8: case I16: case I32: case I64: 
-        case UINT: case U8: case U16: case U32: case U64: case UINTPTR:
-        case F32: case F64:
-        case COMPLEX64: case COMPLEX128:
-        case STRING: case CSTRING: case BYTE: case RUNE: case RAWPTR:
-        case BUILD_DIRECTIVE:
-        case '^': case '?':
+        case BOOL: case INT: case F32: case F64:
+        case STRING: case RUNE: case '?':
         case ')': case ']': case '}':
             return 1;
         default:
