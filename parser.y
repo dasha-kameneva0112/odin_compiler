@@ -25,7 +25,7 @@ void yyerror(const char *s);
 %token CONTINUE DEFER DO DYNAMIC ELSE ENUM FALLTHROUGH
 %token FOR IF IMPORT IN OR_BREAK OR_CONTINUE
 %token OR_ELSE OR_RETURN PACKAGE PROC RETURN STRUCT SWITCH
-%token USING WHEN
+%token USING
 
 %token BOOL INT F32 F64 STRING RUNE
 
@@ -47,14 +47,14 @@ void yyerror(const char *s);
 %token LEX_ERROR
 
 // Приоритеты и ассоциативность  
-%right '?' IF WHEN
+%right '?' IF 
 %left OR_ELSE
 %left OP_RANGE OP_RANGE_INCLUSIVE OP_RANGE_EXCLUSIVE
 %left OP_LOG_OR
 %left OP_LOG_AND
 %left OP_EQ OP_NE '<' '>' OP_LE OP_GE
-%left '+' '-' '|' '~'
-%left '*' '/' '%' OP_MOD2 '&' OP_AND_NOT OP_SHL OP_SHR
+%left '+' '-' 
+%left '*' '/' '%' OP_MOD2 '&' 
 %precedence UNARY
 %precedence '(' '[' '.' '^' OR_RETURN OR_BREAK OR_CONTINUE 
 
@@ -287,11 +287,6 @@ if_stmt: IF expr block
        | IF simple_stmt ';' expr block ELSE if_stmt
        ;
 
-when_stmt: WHEN expr block
-         | WHEN expr block ELSE block
-         | WHEN expr block ELSE when_stmt
-         ;
-
 // for { } 
 //    for x < 10 { } 
 //    for x in arr { } 
@@ -386,8 +381,6 @@ expr: ID
     | expr '%' expr                        
     | expr OP_MOD2 expr                   
     | expr OP_AND_NOT expr                
-    | expr OP_SHL expr                    
-    | expr OP_SHR expr                   
 
 // or_else и диапазоны 
     | expr OR_ELSE expr                    
@@ -397,7 +390,6 @@ expr: ID
 
 // тернарные формы 
     | expr '?' expr ':' expr  %prec '?'  
-    | expr WHEN expr ELSE expr %prec WHEN  
     | expr IF expr ELSE expr %prec IF      
 
 // постфиксные 

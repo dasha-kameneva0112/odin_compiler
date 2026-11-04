@@ -136,7 +136,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "for"                     { return FOR; }
 "do"                      { return DO; }
 "in"                      { return IN; }
-"when"                    { return WHEN; }
 "switch"                  { return SWITCH; }
 "case"                    { return CASE; }
 "fallthrough"             { return FALLTHROUGH; }
