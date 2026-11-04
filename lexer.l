@@ -12,15 +12,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include "parser.tab.h"
-#define MAX_FILE_TAGS 64
-char *file_tags[MAX_FILE_TAGS];
-int file_tag_count = 0;
 
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
 
-
+// позиция токена
 static int cur_line = 1, cur_col = 1;
 #define YY_USER_ACTION                                              \
     yylloc.first_line = cur_line; yylloc.first_column = cur_col;    \
@@ -40,22 +37,22 @@ DOZ_DIGIT   [0-9abAB]
 HEX_DIGIT   [0-9a-fA-F]
 
 DECIMAL_LIT     {DIGIT}(_?{DIGIT})*
+EXPONENT        (e|E)[+-]?{DIGIT}+
 BINARY_LIT      0b{BIN_DIGIT}(_?{BIN_DIGIT})*
 OCTAL_LIT       0o{OCT_DIGIT}(_?{OCT_DIGIT})*
 DOZENAL_LIT     0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*
 HEX_LIT         0x{HEX_DIGIT}(_?{HEX_DIGIT})*
 EX_DECIMAL_LIT  0d{DIGIT}(_?{DIGIT})*
-EXPONENT        (e|E)[+-]?{DIGIT}+
 
 INT_LIT     ({DECIMAL_LIT}|{BINARY_LIT}|{OCTAL_LIT}|{DOZENAL_LIT}|{HEX_LIT}|{EX_DECIMAL_LIT})
 FLOAT_LIT   ({DECIMAL_LIT})?"."{DECIMAL_LIT}({EXPONENT})?|{DECIMAL_LIT}"."({DECIMAL_LIT})?({EXPONENT})?|{DECIMAL_LIT}{EXPONENT}
+
 ESC_OCTAL   \\[0-7]{3}
 ESC_HEX     \\x{HEX_DIGIT}{2}
 ESC_UNICODE \\u{HEX_DIGIT}{4}
 ESC_UNICODE32 \\U{HEX_DIGIT}{8}
-
-
 %%
+
 %{
     int comment_depth = 0;
     char string[20480];
@@ -112,53 +109,46 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 <ST_STRING,ST_CHAR>\\(.|\n)             { fprintf(stderr, "Lex error: invalid escape sequence\n"); BEGIN(INITIAL); return LEX_ERROR; }
 
-`                                { BEGIN(ST_RAW_STRING); string[0] = '\0'; }
+`                                   { BEGIN(ST_RAW_STRING); string[0] = '\0'; }
 <ST_RAW_STRING>[^`]+                { strcat(string, yytext); }
 <ST_RAW_STRING><<EOF>>              { fprintf(stderr, "Lex error: unclosed raw string\n");  BEGIN(INITIAL); return LEX_ERROR; }
 <ST_RAW_STRING>`                    { BEGIN(INITIAL); yylval.str_val = strdup(string); return RAW_STRING_LIT; }
 
 "true"                    { yylval.int_val = 1; return BOOL_LIT; }
 "false"                   { yylval.int_val = 0; return BOOL_LIT; }
-"auto_cast"               { return AUTO_CAST; }
-"bit_field"               { return BIT_FIELD; }
-"bit_set"                 { return BIT_SET; }
-"break"                   { return BREAK; }
-"case"                    { return CASE; }
-"cast"                    { return CAST; }
-"context"                 { return CONTEXT; }
-"continue"                { return CONTINUE; }
-"defer"                   { return DEFER; }
-"distinct"                { return DISTINCT; }
-"do"                      { return DO; }
-"dynamic"                 { return DYNAMIC; }
-"else"                    { return ELSE; }
-"enum"                    { return ENUM; }
-"fallthrough"             { return FALLTHROUGH; }
-"for"                     { return FOR; }
-"if"                      { return IF; }
+"nil"                     { return NIL; }
+"---"                     { return UNDEFINED; }
+"?"                       { return '?'; }
+
+"package"                 { return PACKAGE; }
 "import"                  { return IMPORT; }
+"proc"                    { return PROC; }
+"return"                  { return RETURN; }
+"struct"                  { return STRUCT; }
+"enum"                    { return ENUM; }
+"using"                   { return USING; }
+"defer"                   { return DEFER; }
+"dynamic"                 { return DYNAMIC; }
+
+"if"                      { return IF; }
+"else"                    { return ELSE; }
+"for"                     { return FOR; }
+"do"                      { return DO; }
 "in"                      { return IN; }
-"map"                     { return MAP; }
-"matrix"                  { return MATRIX; }
-"not_in"                  { return NOT_IN; }
+"when"                    { return WHEN; }
+"switch"                  { return SWITCH; }
+"case"                    { return CASE; }
+"fallthrough"             { return FALLTHROUGH; }
+"break"                   { return BREAK; }
+"continue"                { return CONTINUE; }
+
+"auto_cast"               { return AUTO_CAST; }
+"cast"                    { return CAST; }
 "or_break"                { return OR_BREAK; }
 "or_continue"             { return OR_CONTINUE; }
 "or_else"                 { return OR_ELSE; }
 "or_return"               { return OR_RETURN; }
-"package"                 { return PACKAGE; }
-"proc"                    { return PROC; }
-"return"                  { return RETURN; }
-"struct"                  { return STRUCT; }
-"switch"                  { return SWITCH; }
-"typeid"                  { return TYPEID; }
-"union"                   { return UNION; }
-"using"                   { return USING; }
-"when"                    { return WHEN; }
-"where"                   { return WHERE; }
 
-"nil"                     { return NIL; }
-"---"                     { return UNDEFINED; }
-"?"                       { return '?'; }
 
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
@@ -237,30 +227,11 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 ":="        { return OP_DECL_INFERRED; }
 
 "bool"            { return BOOL; }
-"b8"              { return B8; }
-"b16"             { return B16; }
-"b32"             { return B32; }
-"b64"             { return B64; }
 "int"             { return INT; }
-"i8"              { return I8; }
-"i16"             { return I16; }
-"i32"             { return I32; }
-"i64"             { return I64; }
-"uint"            { return UINT; }
-"u8"              { return U8; }
-"u16"             { return U16; }
-"u32"             { return U32; }
-"u64"             { return U64; }
-"uintptr"         { return UINTPTR; }
 "f32"             { return F32; }
 "f64"             { return F64; }
-"complex64"       { return COMPLEX64; }
-"complex128"      { return COMPLEX128; }
 "string"          { return STRING; }
-"cstring"         { return CSTRING; }
-"byte"            { return BYTE; }
 "rune"            { return RUNE; }
-"rawptr"          { return RAWPTR; }
 
 "@"({LETTER}|_)({LETTER}|{DIGIT}|_)*  { yylval.str_val = strdup(yytext); return ATTRIBUTE; }
 "@"                                   { return AT; }
@@ -279,7 +250,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 char *strip_us(const char *src, char *dest) {
     int j = 0;
-
     for (int i = 0; src[i] != '\0'; i++)
     {
         if (src[i] != '_')
