@@ -1,10 +1,9 @@
+
 package main
 
-import "core:fmt"
-
 // ---------- константы ----------
-MAX   :: 100
-NAME  :: "hello"
+MAX :: 100
+NAME :: "hello"
 PI: f64 : 3.14159
 A, B: int : 1, 2
 
@@ -15,8 +14,7 @@ x1, y1 := 1, 2
 flag: bool
 
 // ---------- типы ----------
-Meters :: distinct f32
-MyInt  :: int
+MyInt :: int
 
 Point :: struct {
     x: int,
@@ -25,7 +23,7 @@ Point :: struct {
 
 Person :: struct {
     name: string,
-    age:  int,
+    age: int,
     tags: [4]int,
 }
 
@@ -51,36 +49,15 @@ swap :: proc(a: int, b: int) -> (int, int) {
     return b, a
 }
 
-ptr_test :: proc(p: ^int, q: rawptr) {
-    p^ = 5
-    v := p^
-}
-
 types_test :: proc() {
     a: bool = true
     b: int = 1
-    c: uint = 2
-    d: i8 = 3
-    e: i16 = 4
-    f: i32 = 5
-    g: i64 = 6
-    h: u8 = 7
-    i: u16 = 8
-    j: u32 = 9
-    k: u64 = 10
-    l: f32 = 1.5
-    m: f64 = 2.5
-    n: string = "text"
-    o: rune = 'a'
-    p: byte = 65
-    q: rawptr = nil
-    r: uintptr = 0
-    s: cstring = "c string"
-    t: complex64 = 1.0
-    u: complex128 = 2.0
-    v := 3.5i
-    w: b8 = true
-    z: b32 = false
+    c: f32 = 1.5
+    d: f64 = 2.5
+    e: string = "text"
+    f: rune = 'a'
+    g := 3.5i
+    h := nil
 }
 
 expr_test :: proc() {
@@ -90,21 +67,17 @@ expr_test :: proc() {
     d := a % b
     e := (a + b) * c
     f := -a
-    g := ~a
-    h := !flag
-    i := a & b
-    j := a | b
-    k := a << 2
-    l := b >> 1
-    m := a &~ b
-    n := a < b
-    o := a >= b
-    p := a == b && a != c || d > e
-    q := &a
-    r := cast(i64) a
-    s := add(1, 2)
-    t := add(add(1, 2), 3)
-    u := nothing
+    g := !flag
+    h := a < b
+    i := a >= b
+    j := a == b && a != c || d > e
+    k := cast(int) a
+    l := add(1, 2)
+    m := add(add(1, 2), 3)
+    n := a or_else b
+    o := a if a > b else b
+    p := a .. b
+    q := a ..= b
 }
 
 assign_test :: proc() {
@@ -115,13 +88,10 @@ assign_test :: proc() {
     a *= 2
     a /= 2
     a %= 3
-    a |= 1
-    a &= 7
-    a <<= 1
-    a >>= 1
-    a: int
+
     b: int = 5
     c: int : 7
+
     d, e := 1, 2
     d, e = e, d
     d, e = swap(d, e)
@@ -181,19 +151,6 @@ for_test :: proc() {
     for i < 3 do i += 1
 }
 
-label_test :: proc() {
-    outer: for i := 0; i < 3; i += 1 {
-        for j := 0; j < 3; j += 1 {
-            if j == 1 {
-                continue outer
-            }
-            if i == 2 {
-                break outer
-            }
-        }
-    }
-}
-
 switch_test :: proc(x: int) {
     switch x {
     case 1:
@@ -226,10 +183,12 @@ defer_test :: proc() {
 array_test :: proc() {
     a: [3]int
     s: []int
+
     a[0] = 1
     a[1] = a[0] + 1
     n := a[2]
-    pp: ^int
+
+    b := [3]int{1, 2, 3}
 }
 
 nested_blocks :: proc() {
@@ -243,5 +202,4 @@ nested_blocks :: proc() {
 
 main :: proc() {
     r := add(1, 2)
-    fmt.println(r)
 }

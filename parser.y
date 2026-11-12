@@ -54,9 +54,9 @@ void yyerror(const char *s);
 %left OP_LOG_AND
 %left OP_EQ OP_NE '<' '>' OP_LE OP_GE
 %left '+' '-' 
-%left '*' '/' '%' OP_MOD2 '&' 
+%left '*' '/' '%' OP_MOD2 
 %precedence UNARY
-%precedence '(' '[' '.' '^' OR_RETURN OR_BREAK OR_CONTINUE 
+%precedence '(' '[' '.' OR_RETURN OR_BREAK OR_CONTINUE 
 
 %%
 // Верхний уровень (программа) 
