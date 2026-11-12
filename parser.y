@@ -45,6 +45,8 @@ void yyerror(const char *s);
 %token OP_ARROW OP_DECL_TYPED OP_DECL_INFERRED OP_MOD2
 
 %token LEX_ERROR
+%token AUTO_SEMI
+%token ELSE_AFTER_COMMENT
 
 // Приоритеты и ассоциативность  
 %right '?' IF 
@@ -59,32 +61,34 @@ void yyerror(const char *s);
 %precedence '(' '[' '.' '^' OR_RETURN OR_BREAK OR_CONTINUE 
 
 %%
+// общий разделитель операторов
+stmt_terminator: ';'
+               | AUTO_SEMI
+               ;
+
+
 // Верхний уровень (программа) 
 //  package main
 //  import "core:fmt"
 //  main :: proc() { }    
-program:
-       package_clause top_list 
+program: package_clause top_list 
        ;
 
-package_clause: PACKAGE ID ';'
+package_clause: PACKAGE ID stmt_terminator
               ;
 
 top_list: %empty
         | top_list top_item
         ;
 
-top_item: import_decl
-        | base_decl optional_semicolon
+top_item: import_decl stmt_terminator
+        | base_decl stmt_terminator
         ;
 
-optional_semicolon: %empty
-                  | ';'
-                  ;
 
 // import fmt "core:fmt"   /    import "core:fmt"
-import_decl: IMPORT STRING_LIT ';'
-           | IMPORT ID STRING_LIT ';'
+import_decl: IMPORT STRING_LIT 
+           | IMPORT ID STRING_LIT 
            ;
 
 base_decl: var_decl
@@ -190,7 +194,6 @@ init_item: expr
 field_list_opt: %empty                
               | field_list          
               | field_list ','            
-              | field_list ';'            
               ;
 
 field_list: field_decl                   
@@ -205,7 +208,6 @@ field_decl: id_list ':' type_expr
 enum_body_opt: %empty                               
              | enum_body                       
              | enum_body ','                         
-             | enum_body ';'                         
              ;
 
 enum_body: enum_item                                  
@@ -221,14 +223,18 @@ enum_item: ID
 block: '{' stmt_list_opt '}'
      ;
 
-// Список операторов, ';' после последнего необязательна 
+control_block: block
+             | AUTO_SEMI block
+             ;
+
+// Список операторов
 stmt_list_opt: %empty
              | stmt_list
-             | stmt_list ';'
+             | stmt_list stmt_terminator
              ;
 
 stmt_list: stmt
-         | stmt_list ';' stmt 
+         | stmt_list stmt_terminator stmt 
          ;
              
 // Один оператор 
@@ -289,12 +295,16 @@ expr_opt: %empty
 //    if x > 0 { } else { } 
 //    if x > 0 { } else if y > 0 { } else { }
 //    if x := f(); x > 0 { }      
-if_stmt: IF expr block
-       | IF expr block ELSE block
-       | IF expr block ELSE if_stmt
-       | IF simple_stmt ';' expr block
-       | IF simple_stmt ';' expr block ELSE block
-       | IF simple_stmt ';' expr block ELSE if_stmt
+if_stmt: IF expr control_block
+       | IF expr control_block ELSE control_block
+       | IF expr control_block AUTO_SEMI ELSE control_block
+       | IF expr control_block ELSE if_stmt
+       | IF expr control_block AUTO_SEMI ELSE if_stmt
+       | IF simple_stmt ';' expr control_block
+       | IF simple_stmt ';' expr control_block ELSE control_block
+       | IF simple_stmt ';' expr control_block AUTO_SEMI ELSE control_block
+       | IF simple_stmt ';' expr control_block ELSE if_stmt
+       | IF simple_stmt ';' expr control_block AUTO_SEMI ELSE if_stmt
        ;
 
 // for { } 
@@ -303,10 +313,10 @@ if_stmt: IF expr block
 //    for k, v in m { }
 //    for i := 0; i < n; i += 1 { } 
 //    ... do stmt     
-for_stmt: FOR block
-        | FOR expr block
-        | FOR expr_list IN expr block
-        | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt block
+for_stmt: FOR control_block
+        | FOR expr control_block
+        | FOR expr_list IN expr control_block
+        | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt control_block
         | FOR expr DO stmt
         | FOR expr_list IN expr DO stmt
         | FOR simple_stmt_opt ';' expr_opt ';' simple_stmt_opt DO stmt
@@ -339,11 +349,11 @@ case_clause: CASE expr_list ':' case_body
 // switvh (x) { case 1: if (1) { fallthrough} fjskjflsj case 2: kfsj 
 case_body: stmt_list_opt
          | fall_tail
-         | stmt_list ';' fall_tail
+         | stmt_list stmt_terminator fall_tail
          ;
 
 fall_tail: FALLTHROUGH
-         | FALLTHROUGH ';' 
+         | FALLTHROUGH stmt_terminator
          ;
 
 

@@ -58,11 +58,12 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
     char string[20480];
     char charbuf[32];
     char *buf = string;
+    static int comment_since_last_token = 0;
 %}
 
-"//"[^\n]*                          { /* ничего не возвращаем */ }
+"//"[^\n]*                          { comment_since_last_token = 1; }
 
-"/*"                                { comment_depth = 1; BEGIN(ST_COMMENT); }
+"/*"                                { comment_since_last_token = 1; comment_depth = 1; BEGIN(ST_COMMENT); }
 <ST_COMMENT>"/*"                    { comment_depth++; }
 <ST_COMMENT>\n                      { }
 <ST_COMMENT>.                       { }
@@ -281,7 +282,8 @@ void append_utf8(char *dest, unsigned int codepoint) {
 
 int odin_lex(void);
 static int last_token = 0;
-static int in_attr = 0, attr_depth = 0;
+static char bracket_stack[256];
+static int  bracket_top = 0;
 
 /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
@@ -290,20 +292,22 @@ static int can_end_stmt(int tok)
         case ID: 
         case INT_LIT: case FLOAT_LIT: case STRING_LIT:
         case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
-        case BOOL_LIT: case NIL: 
-        case BREAK: case CONTINUE: case FALLTHROUGH:
-        case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
+        
+        case BOOL_LIT: case NIL: case UNDEFINED:
+        
+        case BREAK: case CONTINUE: case FALLTHROUGH: case RETURN: 
+        case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
+        
         case BOOL: case INT: case F32: case F64:
-        case STRING: case RUNE: case '?':
-        case ')': case ']': case '}':
+        case STRING: case RUNE: 
+        
+        case '?': case ')': case ']': case '}':
             return 1;
+
         default:
             return 0;
     }
 }
-
-static char bracket_stack[256];
-static int  bracket_top = 0;
 
 /* внутри ( ) или [ ] переводы строк не разделяют операторы */
 static int in_brackets(void)
@@ -319,21 +323,34 @@ int yylex(void)
     for (;;) {
         int tok = odin_lex();
         if (tok == '\n') {
-            if (in_brackets()) continue;      /* внутри скобок ';' не нужна */
+            if (in_brackets()) 
+                continue;            /* внутри скобок ';' не нужна */
+            
             if (can_end_stmt(last_token)) {
-                last_token = ';';
-                return ';';
+                last_token = AUTO_SEMI;
+                return AUTO_SEMI;
             }
+
             continue;
         }
 
         if (tok == 0) {
             at_eof = 1;
+
             if (can_end_stmt(last_token)) {
-                last_token = ';';
-                return ';';
+                last_token = AUTO_SEMI;
+                return AUTO_SEMI;
             }
+
             return 0;
+        }
+
+        if (tok == ELSE && last_token == AUTO_SEMI && comment_since_last_token) {
+            tok = ELSE_AFTER_COMMENT;
+        }
+
+        if (tok != AUTO_SEMI) {
+            comment_since_last_token = 0;
         }
 
         /* стек открытых скобок */
@@ -341,21 +358,6 @@ int yylex(void)
             if (bracket_top < 256) bracket_stack[bracket_top++] = (char)tok;
         } else if (tok == ')' || tok == ']' || tok == '}') {
             if (bracket_top > 0) bracket_top--;
-        }
-
-        if (tok == AT) {
-            in_attr = 1; attr_depth = 0;
-        } else if (in_attr && attr_depth == 0 && tok != '(') {
-            in_attr = 0;
-        } else if (in_attr && tok == '(') {
-            attr_depth++;
-        } else if (in_attr && tok == ')') {
-            attr_depth--;
-            if (attr_depth == 0) {
-                in_attr = 0;
-                last_token = ATTRIBUTE;
-                return tok;
-            }
         }
 
         last_token = tok;
