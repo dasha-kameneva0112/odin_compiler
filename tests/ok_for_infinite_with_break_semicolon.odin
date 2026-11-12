@@ -1,5 +1,7 @@
-#!/usr/bin/env odin run
 package main
 
 main :: proc() {
+    for {
+        break
+    }
 }

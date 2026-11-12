@@ -4,6 +4,5 @@ package main
 
 f :: proc() {
     привет := 1
-    名前: int
     café := привет + 2
 }

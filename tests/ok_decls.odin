@@ -1,40 +1,48 @@
+
 package main
 
-import "core:fmt"
-import "core:os"
-import "core:strings"
-
-Vec :: struct { x, y, z: f32 }
+// ---------- структуры ----------
+Vec :: struct {
+    x, y, z: f32,
+}
 
 Node :: struct {
     value: int,
-    next:  ^Node,
-    kids:  []^Node,
-    grid:  [3][4]int,
-    dyn:   [dynamic]string,
-    table: map[string][]int,
-    cb:    proc(a: int) -> bool,
+    grid: [3][4]int,
+    dyn: [dynamic]string,
 }
 
 Mixed :: struct {
     a: int,
-    b: int
+    b: int,
 }
 
-Dir :: enum { North, East, South, West }
+// ---------- перечисления ----------
+Dir :: enum {
+    North,
+    East,
+    South,
+    West,
+}
 
 Level :: enum {
     Low = 1,
     Mid = 5,
-    High
+    High,
 }
 
-Speed :: distinct f32
-Handle :: distinct rawptr
+// ---------- псевдонимы типов ----------
+Speed :: f32
+Handle :: int
 Alias :: Speed
 
+// ---------- константы ----------
 LIMIT: int : 5
 X, Y: f32 : 1.0, 2.0
+A, B :: 10, 20
+
+
+// ---------- переменные ----------
 origin: Vec
 a, b := 1, 2
 names: [dynamic]string

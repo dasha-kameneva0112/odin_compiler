@@ -121,7 +121,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "---"                     { return UNDEFINED; }
 "?"                       { return '?'; }
 
-/* ключевые слова */
+    /* ключевые слова */
 "package"                 { return PACKAGE; }
 "import"                  { return IMPORT; }
 "proc"                    { return PROC; }
@@ -150,7 +150,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "or_else"                 { return OR_ELSE; }
 "or_return"               { return OR_RETURN; }
 
-/* числовые литералы */
+    /* числовые литералы */
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
 0z{DOZ_DIGIT}(_?{DOZ_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
@@ -166,8 +166,8 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
                                     yylval.imag_val.value = strtod(c, NULL);
                                     return IMAGINARY_LIT; }
 
-/* ---- операторы ---- */
-/* составное присваивание */
+    /* ---- операторы ---- */
+    /* составное присваивание */
 "&&="       { return OP_LOG_AND_ASSIGN; }
 "||="       { return OP_LOG_OR_ASSIGN; }
 "+="        { return OP_ADD_ASSIGN; }
@@ -177,14 +177,14 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "%="        { return OP_MOD_ASSIGN; }
 "%%="       { return OP_MOD2_ASSIGN; }
 
-/* диапазоны (for i in 0..<n, case 1..=5) */
+    /* диапазоны (for i in 0..<n, case 1..=5) */
 "..="       { return OP_RANGE_INCLUSIVE; }
 "..<"       { return OP_RANGE_EXCLUSIVE; }
 
 ".."        { return OP_RANGE; }
 "->"        { return OP_ARROW; }
 
-/* логические и сравнения */
+    /* логические и сравнения */
 "&&"        { return OP_LOG_AND; }
 "||"        { return OP_LOG_OR; }
 "=="        { return OP_EQ; }
@@ -193,7 +193,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 ">="        { return OP_GE; }
 "%%"        { return OP_MOD2; }
 
-/* объявления */
+    /* объявления */
 "::"        { return OP_DECL_TYPED; }
 ":="        { return OP_DECL_INFERRED; }
 
@@ -224,7 +224,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "string"          { return STRING; }
 "rune"            { return RUNE; }
 
-/* идентификаторы и пробелы */
+    /* идентификаторы и пробелы */
 ({LETTER}|_)({LETTER}|{DIGIT}|_)*   { yylval.str_val = strdup(yytext); return ID; }
 [ \t\r]+                            { /* пропускаем пробелы */ }
 \n                                  { return '\n'; }
@@ -285,7 +285,7 @@ static int last_token = 0;
 static char bracket_stack[256];
 static int  bracket_top = 0;
 
-/* После каких токенов Odin вставляет ; */
+    /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
 {
     switch (tok) {
@@ -309,7 +309,7 @@ static int can_end_stmt(int tok)
     }
 }
 
-/* внутри ( ) или [ ] переводы строк не разделяют операторы */
+    /* внутри ( ) или [ ] переводы строк не разделяют операторы */
 static int in_brackets(void)
 {
     return bracket_top > 0 && (bracket_stack[bracket_top - 1] == '(' || bracket_stack[bracket_top - 1] == '[');
@@ -359,7 +359,6 @@ int yylex(void)
         } else if (tok == ')' || tok == ']' || tok == '}') {
             if (bracket_top > 0) bracket_top--;
         }
-
         last_token = tok;
         return tok;
     }
