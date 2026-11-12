@@ -7,14 +7,14 @@ void yyerror(const char *s);
 %}
 
 %union {
-    long long    int_val;  /* целочисленный литерал   */
-    double       float_val;  /* вещественный литерал    */
-    char        *str_val;   /* ID, строки, директивы   */
-    unsigned int rune_val;   /* символьный (rune) литерал */
+    long long    int_val;     /* целочисленный литерал   */
+    double       float_val;   /* вещественный литерал    */
+    char        *str_val;     /* ID, строки, директивы   */
+    unsigned int rune_val;    /* символьный (rune) литерал */
     struct {
             double value;
             char unit;
-            } imag_val;   /* 3.5i -> {3.5, 'i'} */
+            } imag_val;       /* 3.5i -> {3.5, 'i'} */
 }
 
 %locations
@@ -131,7 +131,7 @@ return_type_list: type_expr
 
 // Переменные 
 //  x: int = 5   x: int   x := 5   x, y := 1, 2   MAX: int : 100  a: [3]int = {1, 2, 3}
-var_decl: id_list ':' type_expr '=' expr_list 
+var_decl: id_list ':' type_expr '=' init_list 
         | id_list ':' type_expr
         | id_list OP_DECL_INFERRED expr_list
         ;
@@ -175,6 +175,15 @@ base_type: BOOL
          | F64                    
          | STRING                            
          | RUNE                           
+         ;
+
+/* правая часть инициализации: выражения или {a, b, c} */
+init_list: init_item
+         | init_list ',' init_item
+         ;
+
+init_item: expr
+         | '{' elem_list_opt '}'
          ;
 
 // Поля структуры 
@@ -228,7 +237,6 @@ stmt: simple_stmt
     | if_stmt
     | for_stmt
     | switch_stmt
-    | when_stmt
     | RETURN
     | RETURN expr_list
     | DEFER stmt
@@ -261,6 +269,8 @@ simple_stmt: expr_list '=' expr_list
            | expr OP_DIV_ASSIGN expr      /* /= */
            | expr OP_MOD_ASSIGN expr      /* %= */
            | expr OP_MOD2_ASSIGN expr     /* %%= */
+           | expr OP_LOG_AND_ASSIGN expr  /* &&= */
+           | expr OP_LOG_OR_ASSIGN expr   /* ||= */
            | expr                                     
            ;
 
@@ -380,7 +390,6 @@ expr: ID
     | expr '/' expr                       
     | expr '%' expr                        
     | expr OP_MOD2 expr                   
-    | expr OP_AND_NOT expr                
 
 // or_else и диапазоны 
     | expr OR_ELSE expr                    
@@ -396,7 +405,7 @@ expr: ID
     | expr OR_RETURN                      
     | expr OR_BREAK                        
     | expr OR_CONTINUE                    
-    | expr '(' arg_list_op ')'  
+    | expr '(' arg_list_opt ')'  
     | base_type '(' arg_list_opt ')'          /* int(x), f64(x) — явное приведение */           
     | expr '[' expr ']'                    
     | expr '.' ID              
@@ -409,7 +418,7 @@ expr: ID
     | array_type '{' elem_list_opt '}'
     ;
 
-arg_list_op: %empty                       
+arg_list_opt: %empty                       
            | arg_list                      
            | arg_list ','
            ;
@@ -417,6 +426,15 @@ arg_list_op: %empty
 arg_list: expr
         | arg_list ',' expr
         ;
+
+elem_list_opt: %empty 
+             | elem_list 
+             | elem_list ',' 
+             ;
+
+elem_list: expr 
+         | elem_list ',' expr 
+         ;
 
 %%
 
