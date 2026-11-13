@@ -256,7 +256,9 @@ stmt: simple_stmt
     | CONTINUE
     | expr_list OP_DECL_TYPED type_core                                      /* локальный struct/enum */
     | expr_list OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block  /* локальная процедура   */
-    | expr_list OP_DECL_TYPED PROC '{' id_list '}'                           /* группа перегрузок     */
+    | expr_list OP_DECL_TYPED PROC '{' id_list '}'     
+    | expr OP_INC { yyerror("Postfix '++' statement is not supported"); YYERROR; }
+    | expr OP_DEC { yyerror("Postfix '--' statement is not supported"); YYERROR; }/* группа перегрузок     */
     ;
 
 // Простые операторы-выражения 

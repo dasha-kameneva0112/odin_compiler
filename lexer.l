@@ -198,7 +198,9 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 ":="        { return OP_DECL_INFERRED; }
 
 "+"         { return '+'; }
+"++"        { return OP_INC; }
 "-"         { return '-'; }
+"--"        { return OP_DEC; }
 "*"         { return '*'; }
 "/"         { return '/'; }
 "%"         { return '%'; }
