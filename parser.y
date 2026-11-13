@@ -19,6 +19,7 @@ void yyerror(const char *s);
 
 %locations
 %define parse.error verbose
+%start program
 
 // Ключевые слова языка  
 %token AUTO_CAST BREAK CASE CAST
@@ -46,7 +47,6 @@ void yyerror(const char *s);
 
 %token LEX_ERROR
 %token AUTO_SEMI
-%token ELSE_AFTER_COMMENT
 
 // Приоритеты и ассоциативность  
 %right '?' IF 
@@ -220,12 +220,12 @@ enum_item: ID
 
 
 // Блоки кода 
-block: '{' stmt_list_opt '}'
-     ;
-
 control_block: block
              | AUTO_SEMI block
              ;
+
+block: '{' stmt_list_opt '}'
+     ;
 
 // Список операторов
 stmt_list_opt: %empty

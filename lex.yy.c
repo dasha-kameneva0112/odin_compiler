@@ -1051,7 +1051,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 #line 64 "lexer.l"
-{ /* ничего не возвращаем */ }
+{ }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
@@ -2773,7 +2773,8 @@ void append_utf8(char *dest, unsigned int codepoint) {
 
 int odin_lex(void);
 static int last_token = 0;
-static int in_attr = 0, attr_depth = 0;
+static char bracket_stack[256];
+static int  bracket_top = 0;
 
     /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
@@ -2782,20 +2783,22 @@ static int can_end_stmt(int tok)
         case ID: 
         case INT_LIT: case FLOAT_LIT: case STRING_LIT:
         case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
-        case BOOL_LIT: case NIL: 
-        case BREAK: case CONTINUE: case FALLTHROUGH:
-        case RETURN: case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
+        
+        case BOOL_LIT: case NIL: case UNDEFINED:
+        
+        case BREAK: case CONTINUE: case FALLTHROUGH: case RETURN: 
+        case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
+        
         case BOOL: case INT: case F32: case F64:
-        case STRING: case RUNE: case '?':
-        case ')': case ']': case '}':
+        case STRING: case RUNE: 
+        
+        case '?': case ')': case ']': case '}':
             return 1;
+
         default:
             return 0;
     }
 }
-
-static char bracket_stack[256];
-static int  bracket_top = 0;
 
     /* внутри ( ) или [ ] переводы строк не разделяют операторы */
 static int in_brackets(void)
@@ -2811,20 +2814,25 @@ int yylex(void)
     for (;;) {
         int tok = odin_lex();
         if (tok == '\n') {
-            if (in_brackets()) continue;      /* внутри скобок ';' не нужна */
+            if (in_brackets()) 
+                continue;            /* внутри скобок ';' не нужна */
+            
             if (can_end_stmt(last_token)) {
-                last_token = ';';
-                return ';';
+                last_token = AUTO_SEMI;
+                return AUTO_SEMI;
             }
+
             continue;
         }
 
         if (tok == 0) {
             at_eof = 1;
+
             if (can_end_stmt(last_token)) {
-                last_token = ';';
-                return ';';
+                last_token = AUTO_SEMI;
+                return AUTO_SEMI;
             }
+
             return 0;
         }
 

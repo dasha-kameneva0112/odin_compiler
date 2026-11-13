@@ -58,12 +58,11 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
     char string[20480];
     char charbuf[32];
     char *buf = string;
-    static int comment_since_last_token = 0;
 %}
 
-"//"[^\n]*                          { comment_since_last_token = 1; }
+"//"[^\n]*                          { }
 
-"/*"                                { comment_since_last_token = 1; comment_depth = 1; BEGIN(ST_COMMENT); }
+"/*"                                { comment_depth = 1; BEGIN(ST_COMMENT); }
 <ST_COMMENT>"/*"                    { comment_depth++; }
 <ST_COMMENT>\n                      { }
 <ST_COMMENT>.                       { }
@@ -285,7 +284,7 @@ static int last_token = 0;
 static char bracket_stack[256];
 static int  bracket_top = 0;
 
-    /* После каких токенов Odin вставляет ; */
+/* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
 {
     switch (tok) {
@@ -343,14 +342,6 @@ int yylex(void)
             }
 
             return 0;
-        }
-
-        if (tok == ELSE && last_token == AUTO_SEMI && comment_since_last_token) {
-            tok = ELSE_AFTER_COMMENT;
-        }
-
-        if (tok != AUTO_SEMI) {
-            comment_since_last_token = 0;
         }
 
         /* стек открытых скобок */
