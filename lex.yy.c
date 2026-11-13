@@ -2791,7 +2791,7 @@ static int  bracket_top = 0;
 static int in_header = 0, header_depth = 0;     /* мы в заголовке if/for/switch */
 static int arrow_pending = 0, arrow_depth = 0; /* мы в типе результата: -> T { */
 static int semi_after_rbrace = 0;               /* AUTO_SEMI вставлен сразу после '}' */
-
+static int proc_sig = 0, semi_after_proc_sig = 0;  /* относится ли { на следующей строке к процедуре */
 
 /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
@@ -2852,6 +2852,8 @@ static int lex_core(void)
                 last_token = AUTO_SEMI;
                 in_header = 0;
                 arrow_pending = 0;
+                semi_after_proc_sig = proc_sig;
+                proc_sig = 0;
                 return AUTO_SEMI;
             }
 
@@ -2859,6 +2861,7 @@ static int lex_core(void)
         }
 
         if (tok == 0) {
+            semi_after_proc_sig = 0;
             at_eof = 1;
 
             if (can_end_stmt(last_token)) {
@@ -2878,6 +2881,9 @@ static int lex_core(void)
         } else if (tok == OP_ARROW) {
             arrow_pending = 1; arrow_depth = bracket_top;
         }
+
+        if (tok == PROC) proc_sig = 1;
+        else if (tok == '{' || tok == ';') proc_sig = 0;
 
         if (tok == '{') {
             if (in_header && bracket_top == header_depth) {
@@ -2916,15 +2922,20 @@ int yylex(void)
     }
 
     int tok = lex_core();
-    if (tok == AUTO_SEMI && semi_after_rbrace) {
+    if (tok == AUTO_SEMI && (semi_after_rbrace || semi_after_proc_sig)) {
+        int after_rbrace = semi_after_rbrace, after_sig = semi_after_proc_sig;
         YYSTYPE semi_val = yylval;
         YYLTYPE semi_loc = yylloc;
 
-        semi_after_rbrace = 0;
+        semi_after_rbrace = semi_after_proc_sig = 0;
         comment_seen = 0;
         int nt = lex_core();
-        if (nt == ELSE && !comment_seen)
+
+        if (after_rbrace && nt == ELSE && !comment_seen)
             return ELSE;                       /* AUTO_SEMI не отдаём */
+
+        if (after_sig && nt == '{' && yylloc.first_line == semi_loc.last_line)
+            return nt;                         /* proc() <перевод строки> { */
 
         pb_tok = nt; pb_val = yylval; pb_loc = yylloc; pb_valid = 1;
         yylval = semi_val; yylloc = semi_loc;
