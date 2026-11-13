@@ -16,6 +16,7 @@
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
+static int comment_seen = 0;   /* между токенами встретился комментарий */
 
 // позиция токена
 static int cur_line = 1, cur_col = 1;
@@ -60,9 +61,9 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
     char *buf = string;
 %}
 
-"//"[^\n]*                          { }
+"//"[^\n]*                          { comment_seen = 1; }
 
-"/*"                                { comment_depth = 1; BEGIN(ST_COMMENT); }
+"/*"                                { comment_depth = 1; comment_seen = 1; BEGIN(ST_COMMENT); }
 <ST_COMMENT>"/*"                    { comment_depth++; }
 <ST_COMMENT>\n                      { }
 <ST_COMMENT>.                       { }
@@ -284,6 +285,12 @@ static int last_token = 0;
 static char bracket_stack[256];
 static int  bracket_top = 0;
 
+/* контекст для выбора '{' (блок или составной литерал) */
+static int in_header = 0, header_depth = 0;     /* мы в заголовке if/for/switch */
+static int arrow_pending = 0, arrow_depth = 0; /* мы в типе результата: -> T { */
+static int semi_after_rbrace = 0;               /* AUTO_SEMI вставлен сразу после '}' */
+
+
 /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
 {
@@ -308,13 +315,20 @@ static int can_end_stmt(int tok)
     }
 }
 
-    /* внутри ( ) или [ ] переводы строк не разделяют операторы */
+/* токены, после которых может начинаться оператор */
+static int stmt_start(int t)
+{
+    return t == 0 || t == AUTO_SEMI || t == ';' || t == '{' || t == LIT_LBRACE
+        || t == '}' || t == ELSE || t == DO || t == ':';
+}
+
+/* внутри ( ) или [ ] переводы строк не разделяют операторы */
 static int in_brackets(void)
 {
     return bracket_top > 0 && (bracket_stack[bracket_top - 1] == '(' || bracket_stack[bracket_top - 1] == '[');
 }
 
-int yylex(void)
+static int lex_core(void)
 {
     static int at_eof = 0;
     if (at_eof) return 0;
@@ -322,11 +336,20 @@ int yylex(void)
     for (;;) {
         int tok = odin_lex();
         if (tok == '\n') {
+            /* тело 'do' должно начинаться на той же строке */
+            if (last_token == DO) {
+                fprintf(stderr, "Lex error: the body of 'do' must be on the same line as 'do'\n");
+                return LEX_ERROR;
+            }
+
             if (in_brackets()) 
                 continue;            /* внутри скобок ';' не нужна */
             
             if (can_end_stmt(last_token)) {
+                semi_after_rbrace = (last_token == '}');
                 last_token = AUTO_SEMI;
+                in_header = 0;
+                arrow_pending = 0;
                 return AUTO_SEMI;
             }
 
@@ -337,6 +360,7 @@ int yylex(void)
             at_eof = 1;
 
             if (can_end_stmt(last_token)) {
+                semi_after_rbrace = 0;
                 last_token = AUTO_SEMI;
                 return AUTO_SEMI;
             }
@@ -344,13 +368,65 @@ int yylex(void)
             return 0;
         }
 
+        /* заголовок if/for/switch: '{' на том же уровне скобок это начало блока */
+        if ((tok == IF && stmt_start(last_token)) || tok == FOR || tok == SWITCH) {
+            in_header = 1; header_depth = bracket_top;
+        } else if (tok == DO) {
+            in_header = 0;
+        } else if (tok == OP_ARROW) {
+            arrow_pending = 1; arrow_depth = bracket_top;
+        }
+
+        if (tok == '{') {
+            if (in_header && bracket_top == header_depth) {
+                in_header = 0;                         /* блок: if x { */
+            } else if (last_token == ID && !(arrow_pending && bracket_top == arrow_depth)) {
+                tok = LIT_LBRACE;                      /* Pair{...} */
+            }
+            arrow_pending = 0;
+        }
+
         /* стек открытых скобок */
-        if (tok == '(' || tok == '[' || tok == '{') {
-            if (bracket_top < 256) bracket_stack[bracket_top++] = (char)tok;
+        if (tok == '(' || tok == '[' || tok == '{' || tok == LIT_LBRACE) {
+            if (bracket_top < 256) bracket_stack[bracket_top++] = (tok == LIT_LBRACE) ? '{' : (char)tok;
         } else if (tok == ')' || tok == ']' || tok == '}') {
             if (bracket_top > 0) bracket_top--;
         }
         last_token = tok;
         return tok;
     }
+}
+
+
+/* Обёртка с подглядыванием на один токен.
+   '}' <перевод строки> else  -> AUTO_SEMI проглатывается (else можно на следующей строке).
+   Если между '}' и else был комментарий, AUTO_SEMI остаётся, и парсер сам даст ошибку. */
+static int      pb_valid = 0, pb_tok = 0;
+static YYSTYPE  pb_val;
+static YYLTYPE  pb_loc;
+
+int yylex(void)
+{
+    if (pb_valid) {
+        pb_valid = 0;
+        yylval = pb_val; yylloc = pb_loc;
+        return pb_tok;
+    }
+
+    int tok = lex_core();
+    if (tok == AUTO_SEMI && semi_after_rbrace) {
+        YYSTYPE semi_val = yylval;
+        YYLTYPE semi_loc = yylloc;
+
+        semi_after_rbrace = 0;
+        comment_seen = 0;
+        int nt = lex_core();
+        if (nt == ELSE && !comment_seen)
+            return ELSE;                       /* AUTO_SEMI не отдаём */
+
+        pb_tok = nt; pb_val = yylval; pb_loc = yylloc; pb_valid = 1;
+        yylval = semi_val; yylloc = semi_loc;
+        return AUTO_SEMI;
+    }
+    return tok;
 }

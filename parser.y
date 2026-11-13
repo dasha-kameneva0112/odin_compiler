@@ -20,6 +20,8 @@ void yyerror(const char *s);
 %locations
 %define parse.error verbose
 %start program
+%type <int_val> expr    /* 1 = выражение может быть оператором (вызов, or_return...) */
+
 
 // Ключевые слова языка  
 %token AUTO_CAST BREAK CASE CAST
@@ -47,6 +49,9 @@ void yyerror(const char *s);
 
 %token LEX_ERROR
 %token AUTO_SEMI
+%token OP_INC OP_DEC        /* ++ и -- : в Odin нет такого оператора, ловим ошибку */
+%token LIT_LBRACE                /* { составного литерала Pair{...} (отличаем от { блока в лексере) */
+
 
 // Приоритеты и ассоциативность  
 %right '?' IF 
@@ -277,7 +282,7 @@ simple_stmt: expr_list '=' expr_list
            | expr OP_MOD2_ASSIGN expr     /* %%= */
            | expr OP_LOG_AND_ASSIGN expr  /* &&= */
            | expr OP_LOG_OR_ASSIGN expr   /* ||= */
-           | expr                                     
+           | expr { if (!$1) { yyerror("Expression is not used"); YYERROR; } }
            ;
 
 // Необязательный простой оператор 
@@ -297,14 +302,10 @@ expr_opt: %empty
 //    if x := f(); x > 0 { }      
 if_stmt: IF expr control_block
        | IF expr control_block ELSE control_block
-       | IF expr control_block AUTO_SEMI ELSE control_block
        | IF expr control_block ELSE if_stmt
-       | IF expr control_block AUTO_SEMI ELSE if_stmt
        | IF simple_stmt ';' expr control_block
        | IF simple_stmt ';' expr control_block ELSE control_block
-       | IF simple_stmt ';' expr control_block AUTO_SEMI ELSE control_block
        | IF simple_stmt ';' expr control_block ELSE if_stmt
-       | IF simple_stmt ';' expr control_block AUTO_SEMI ELSE if_stmt
        ;
 
 // for { } 
@@ -363,69 +364,73 @@ expr_list: expr
          ;
 
 // Выражения 
-expr: ID                               
-    | INT_LIT                             
-    | FLOAT_LIT                          
-    | STRING_LIT                       
-    | RAW_STRING_LIT                     
-    | IMAGINARY_LIT                  
-    | RUNE_LIT                            
-    | NIL                                 
-    | UNDEFINED                          
-    | BOOL_LIT                            
-    | '(' expr ')'                       
+expr: ID                                { $$ = 0; }
+    | INT_LIT                           { $$ = 0; }
+    | FLOAT_LIT                         { $$ = 0; }
+    | STRING_LIT                        { $$ = 0; }
+    | RAW_STRING_LIT                    { $$ = 0; }
+    | IMAGINARY_LIT                     { $$ = 0; }
+    | RUNE_LIT                          { $$ = 0; }
+    | NIL                               { $$ = 0; }
+    | UNDEFINED                         { $$ = 0; }
+    | BOOL_LIT                          { $$ = 0; }
+    | '(' expr ')'                      { $$ = 0; }
 
 // унарные (приоритет UNARY) 
-    | '+' expr %prec UNARY               
-    | '-' expr %prec UNARY               
-    | '!' expr %prec UNARY            
-    | AUTO_CAST expr %prec UNARY          
+    | '+' expr %prec UNARY              { $$ = 0; }
+    | '-' expr %prec UNARY              { $$ = 0; }
+    | '!' expr %prec UNARY              { $$ = 0; }
+    | AUTO_CAST expr %prec UNARY        { $$ = 0; }
 
 // бинарные: логика 
-    | expr OP_LOG_OR expr                 
-    | expr OP_LOG_AND expr
+    | expr OP_LOG_OR expr               { $$ = 0; }
+    | expr OP_LOG_AND expr              { $$ = 0; }
 
 // сравнения 
-    | expr OP_EQ expr                   
-    | expr OP_NE expr                   
-    | expr '<' expr                       
-    | expr '>' expr                      
-    | expr OP_LE expr                     
-    | expr OP_GE expr                      
+    | expr OP_EQ expr                   { $$ = 0; }
+    | expr OP_NE expr                   { $$ = 0; }
+    | expr '<' expr                     { $$ = 0; }
+    | expr '>' expr                     { $$ = 0; }
+    | expr OP_LE expr                   { $$ = 0; }
+    | expr OP_GE expr                   { $$ = 0; }
 
 // арифметика и битовые 
-    | expr '+' expr                        
-    | expr '-' expr                        
-    | expr '*' expr                       
-    | expr '/' expr                       
-    | expr '%' expr                        
-    | expr OP_MOD2 expr                   
+    | expr '+' expr                     { $$ = 0; }
+    | expr '-' expr                     { $$ = 0; }
+    | expr '*' expr                     { $$ = 0; }
+    | expr '/' expr                     { $$ = 0; }
+    | expr '%' expr                     { $$ = 0; }
+    | expr OP_MOD2 expr                 { $$ = 0; }
 
 // or_else и диапазоны 
-    | expr OR_ELSE expr                    
-    | expr OP_RANGE expr                  
-    | expr OP_RANGE_INCLUSIVE expr        
-    | expr OP_RANGE_EXCLUSIVE expr        
+    | expr OR_ELSE expr                 { $$ = 0; }
+    | expr OP_RANGE expr                { $$ = 0; }
+    | expr OP_RANGE_INCLUSIVE expr      { $$ = 0; }
+    | expr OP_RANGE_EXCLUSIVE expr      { $$ = 0; }
 
 // тернарные формы 
-    | expr '?' expr ':' expr  %prec '?'  
-    | expr IF expr ELSE expr %prec IF      
+    | expr '?' expr ':' expr  %prec '?' { $$ = 0; }
+    | expr IF expr ELSE expr %prec IF   { $$ = 0; }
 
 // постфиксные 
-    | expr OR_RETURN                      
-    | expr OR_BREAK                        
-    | expr OR_CONTINUE                    
-    | expr '(' arg_list_opt ')'  
-    | base_type '(' arg_list_opt ')'          /* int(x), f64(x) — явное приведение */           
-    | expr '[' expr ']'                    
-    | expr '.' ID              
-    | '.' ID                                  /* неявный селектор enum: .Red */          
+    | expr OR_RETURN                    { $$ = 1; }
+    | expr OR_BREAK                     { $$ = 1; }
+    | expr OR_CONTINUE                  { $$ = 1; }
+    | expr '(' arg_list_opt ')'         { $$ = 1; }
+    | base_type '(' arg_list_opt ')'    { $$ = 0; }   /* int(x), f64(x) — явное приведение */
+    | expr '[' expr ']'                 { $$ = 0; }
+    | expr '.' ID                       { $$ = 0; }
+    | '.' ID                            { $$ = 0; }   /* неявный селектор enum: .Red */
 
 // приведение типа 
-    | CAST '(' type_expr ')' expr %prec UNARY 
-    
+    | CAST '(' type_expr ')' expr %prec UNARY { $$ = 0; }
+
     /* литерал массива: [3]int{1, 2, 3}   []int{}   [dynamic]int{} */
-    | array_type '{' elem_list_opt '}'
+    | array_type '{' elem_list_opt '}'  { $$ = 0; }
+
+    /* литерал структуры: Pair{x = 1, y = 2}   Pair{1, 2}   pkg.Pair{} */
+    | ID LIT_LBRACE lit_elem_list_opt '}'              { $$ = 0; }
+    | expr '.' ID LIT_LBRACE lit_elem_list_opt '}'     { $$ = 0; }
     ;
 
 arg_list_opt: %empty                       
@@ -445,6 +450,20 @@ elem_list_opt: %empty
 elem_list: expr 
          | elem_list ',' expr 
          ;
+
+// элементы литерала структуры: значение или имя = значение
+lit_elem_list_opt: %empty
+                 | lit_elem_list
+                 | lit_elem_list ','
+                 ;
+
+lit_elem_list: lit_elem
+             | lit_elem_list ',' lit_elem
+             ;
+
+lit_elem: expr
+        | ID '=' expr
+        ;
 
 %%
 
