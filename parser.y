@@ -114,6 +114,7 @@ proc_decl: id_list OP_DECL_TYPED PROC '(' param_list_opt ')' return_type block
 param_list_opt: %empty                 
               | param_list              
               | param_list ','
+              | param_list AUTO_SEMI
               ;
 
 param_list: param                      
@@ -447,7 +448,8 @@ arg_list: expr
 
 elem_list_opt: %empty 
              | elem_list 
-             | elem_list ',' 
+             | elem_list ','
+             | elem_list AUTO_SEMI
              ;
 
 elem_list: expr 
@@ -458,6 +460,7 @@ elem_list: expr
 lit_elem_list_opt: %empty
                  | lit_elem_list
                  | lit_elem_list ','
+                 | lit_elem_list AUTO_SEMI
                  ;
 
 lit_elem_list: lit_elem

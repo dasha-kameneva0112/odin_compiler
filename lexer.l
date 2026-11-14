@@ -17,6 +17,7 @@ char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
 static int comment_seen = 0;   /* между токенами встретился комментарий */
+static int comment_depth = 0;
 
 // позиция токена
 static int cur_line = 1, cur_col = 1;
@@ -55,7 +56,6 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 %%
 
 %{
-    int comment_depth = 0;
     char string[20480];
     char charbuf[32];
     char *buf = string;
@@ -63,9 +63,9 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 
 "//"[^\n]*                          { comment_seen = 1; }
 
-"/*"                                { comment_depth = 1; comment_seen = 1; BEGIN(ST_COMMENT); }
+"/*"                                 { comment_depth = 1; comment_seen = 1; BEGIN(ST_COMMENT); }
 <ST_COMMENT>"/*"                    { comment_depth++; }
-<ST_COMMENT>\n                      { }
+<ST_COMMENT>\n                      { return '\n'; }   /* перевод строки внутри комментария */
 <ST_COMMENT>.                       { }
 <ST_COMMENT><<EOF>>                 { fprintf(stderr, "Lex error: unclosed comment\n"); BEGIN(INITIAL); return LEX_ERROR; }
 <ST_COMMENT>"*/"                    { comment_depth--; if (comment_depth == 0) { BEGIN(INITIAL); } }
@@ -283,35 +283,51 @@ void append_utf8(char *dest, unsigned int codepoint) {
 }
 
 int odin_lex(void);
-static int last_token = 0;
+
+static int  last_token = 0;
 static char bracket_stack[256];
 static int  bracket_top = 0;
 
-/* контекст для выбора '{' (блок или составной литерал) */
-static int in_header = 0, header_depth = 0;     /* мы в заголовке if/for/switch */
-static int arrow_pending = 0, arrow_depth = 0; /* мы в типе результата: -> T { */
-static int semi_after_rbrace = 0;               /* AUTO_SEMI вставлен сразу после '}' */
-static int proc_sig = 0, semi_after_proc_sig = 0;  /* относится ли { на следующей строке к процедуре */
+/* Ждём '{' тела: заголовок if/for/switch или сигнатура proc (-> T {).
+   Такая '{' это блок, а не составной литерал Pair{...}. */
+enum { BLK_NONE, BLK_HEADER, BLK_PROC };
+static int block_kind  = BLK_NONE;
+static int block_depth = 0;                 /* уровень скобок, на котором ждём '{' */
+
+/* один токен обратной подстановки (подглядывание вперёд) */
+static int      has_back = 0, back_tok = 0;
+static YYSTYPE  back_val;
+static YYLTYPE  back_loc;
+
+static int raw_next(void)
+{
+    if (has_back) {
+        has_back = 0;
+        yylval = back_val; yylloc = back_loc;
+        return back_tok;
+    }
+    return odin_lex();
+}
+
+static void unget(int tok)
+{
+    back_tok = tok; back_val = yylval; back_loc = yylloc; has_back = 1;
+}
 
 /* После каких токенов Odin вставляет ; */
 static int can_end_stmt(int tok)
 {
     switch (tok) {
-        case ID: 
+        case ID:
         case INT_LIT: case FLOAT_LIT: case STRING_LIT:
         case RAW_STRING_LIT: case RUNE_LIT: case IMAGINARY_LIT:
-        
         case BOOL_LIT: case NIL: case UNDEFINED:
-        
-        case BREAK: case CONTINUE: case FALLTHROUGH: case RETURN: 
+        case BREAK: case CONTINUE: case FALLTHROUGH: case RETURN:
         case OR_RETURN: case OR_BREAK: case OR_CONTINUE:
-        
         case BOOL: case INT: case F32: case F64:
-        case STRING: case RUNE: 
-        
+        case STRING: case RUNE:
         case '?': case ')': case ']': case '}':
             return 1;
-
         default:
             return 0;
     }
@@ -324,122 +340,106 @@ static int stmt_start(int t)
         || t == '}' || t == ELSE || t == DO || t == ':';
 }
 
+/* после '}' на той же строке может сразу идти оператор (без ;) */
+static int stmt_after_rbrace(int t)
+{
+    switch (t) {
+        case ID: case FOR: case SWITCH:
+        case RETURN: case BREAK: case CONTINUE: case DEFER: case USING:
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 /* внутри ( ) или [ ] переводы строк не разделяют операторы */
 static int in_brackets(void)
 {
-    return bracket_top > 0 && (bracket_stack[bracket_top - 1] == '(' || bracket_stack[bracket_top - 1] == '[');
+    return bracket_top > 0 &&
+           (bracket_stack[bracket_top - 1] == '(' || bracket_stack[bracket_top - 1] == '[');
 }
 
-static int lex_core(void)
+int yylex(void)
 {
     static int at_eof = 0;
     if (at_eof) return 0;
 
     for (;;) {
-        int tok = odin_lex();
+        int tok = raw_next();
+
         if (tok == '\n') {
-            /* тело 'do' должно начинаться на той же строке */
             if (last_token == DO) {
                 fprintf(stderr, "Lex error: the body of 'do' must be on the same line as 'do'\n");
                 return LEX_ERROR;
             }
+            if (in_brackets() || !can_end_stmt(last_token))
+                continue;
 
-            if (in_brackets()) 
-                continue;            /* внутри скобок ';' не нужна */
-            
-            if (can_end_stmt(last_token)) {
-                semi_after_rbrace = (last_token == '}');
-                last_token = AUTO_SEMI;
-                in_header = 0;
-                arrow_pending = 0;
-                semi_after_proc_sig = proc_sig;
-                proc_sig = 0;
-                return AUTO_SEMI;
+            YYLTYPE nl = yylloc;                          /* позиция перевода строки */
+            int after_rbrace = (last_token == '}');
+            int after_sig    = (block_kind == BLK_PROC);
+
+            if (after_rbrace || after_sig) {
+                comment_seen = 0;
+                int nt;
+                do { nt = raw_next(); } while (nt == '\n');
+                unget(nt);
+
+                /* '}' <перевод строки> else   или   proc() <перевод строки> '{' (строго следующая строка) */
+                if ((after_rbrace && nt == ELSE && !comment_seen) ||
+                    (after_sig && nt == '{' && back_loc.first_line == nl.last_line))
+                    continue;                             /* здесь перевод строки не заканчивает оператор */
             }
 
-            continue;
+            yylloc = nl;
+            last_token = AUTO_SEMI;
+            block_kind = BLK_NONE;
+            return AUTO_SEMI;
         }
 
         if (tok == 0) {
-            semi_after_proc_sig = 0;
             at_eof = 1;
-
             if (can_end_stmt(last_token)) {
-                semi_after_rbrace = 0;
                 last_token = AUTO_SEMI;
                 return AUTO_SEMI;
             }
-
             return 0;
         }
 
-        /* заголовок if/for/switch: '{' на том же уровне скобок это начало блока */
-        if ((tok == IF && stmt_start(last_token)) || tok == FOR || tok == SWITCH) {
-            in_header = 1; header_depth = bracket_top;
-        } else if (tok == DO) {
-            in_header = 0;
-        } else if (tok == OP_ARROW) {
-            arrow_pending = 1; arrow_depth = bracket_top;
+        /* '}' и сразу за ней на той же строке оператор: вставляем AUTO_SEMI */
+        if (last_token == '}' && stmt_after_rbrace(tok) && !in_brackets()) {
+            unget(tok);
+            last_token = AUTO_SEMI;
+            return AUTO_SEMI;
         }
 
-        if (tok == PROC) proc_sig = 1;
-        else if (tok == '{' || tok == ';') proc_sig = 0;
+        /* ждём '{' тела блока */
+        if ((tok == IF && stmt_start(last_token)) || tok == FOR || tok == SWITCH) {
+            block_kind = BLK_HEADER; block_depth = bracket_top;
+        } else if (tok == PROC) {
+            block_kind = BLK_PROC;   block_depth = bracket_top;
+        } else if (tok == DO || (tok == ';' && block_kind == BLK_PROC)) {
+            block_kind = BLK_NONE;
+        }
 
         if (tok == '{') {
-            if (in_header && bracket_top == header_depth) {
-                in_header = 0;                         /* блок: if x { */
-            } else if (last_token == ID && !(arrow_pending && bracket_top == arrow_depth)) {
-                tok = LIT_LBRACE;                      /* Pair{...} */
-            }
-            arrow_pending = 0;
+            if (block_kind != BLK_NONE && bracket_top == block_depth)
+                block_kind = BLK_NONE;                    /* '{' тела: блок */
+            else if (last_token == ID)
+                tok = LIT_LBRACE;                         /* Pair{...} */
         }
 
-        /* стек открытых скобок */
+        /* стек открытых скобок; '(' сразу после proc помечаем 'P' (список параметров) */
         if (tok == '(' || tok == '[' || tok == '{' || tok == LIT_LBRACE) {
-            if (bracket_top < 256) bracket_stack[bracket_top++] = (tok == LIT_LBRACE) ? '{' : (char)tok;
+            if (bracket_top < 256)
+                bracket_stack[bracket_top++] = (tok == LIT_LBRACE) ? '{'
+                                             : (tok == '(' && last_token == PROC) ? 'P'
+                                             : (char)tok;
         } else if (tok == ')' || tok == ']' || tok == '}') {
             if (bracket_top > 0) bracket_top--;
         }
+
         last_token = tok;
         return tok;
     }
-}
-
-
-/* Обёртка с подглядыванием на один токен.
-   '}' <перевод строки> else  -> AUTO_SEMI проглатывается (else можно на следующей строке).
-   Если между '}' и else был комментарий, AUTO_SEMI остаётся, и парсер сам даст ошибку. */
-static int      pb_valid = 0, pb_tok = 0;
-static YYSTYPE  pb_val;
-static YYLTYPE  pb_loc;
-
-int yylex(void)
-{
-    if (pb_valid) {
-        pb_valid = 0;
-        yylval = pb_val; yylloc = pb_loc;
-        return pb_tok;
-    }
-
-    int tok = lex_core();
-    if (tok == AUTO_SEMI && (semi_after_rbrace || semi_after_proc_sig)) {
-        int after_rbrace = semi_after_rbrace, after_sig = semi_after_proc_sig;
-        YYSTYPE semi_val = yylval;
-        YYLTYPE semi_loc = yylloc;
-
-        semi_after_rbrace = semi_after_proc_sig = 0;
-        comment_seen = 0;
-        int nt = lex_core();
-
-        if (after_rbrace && nt == ELSE && !comment_seen)
-            return ELSE;                       /* AUTO_SEMI не отдаём */
-
-        if (after_sig && nt == '{' && yylloc.first_line == semi_loc.last_line)
-            return nt;                         /* proc() <перевод строки> { */
-
-        pb_tok = nt; pb_val = yylval; pb_loc = yylloc; pb_valid = 1;
-        yylval = semi_val; yylloc = semi_loc;
-        return AUTO_SEMI;
-    }
-    return tok;
 }
