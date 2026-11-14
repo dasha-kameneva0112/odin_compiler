@@ -431,10 +431,12 @@ int yylex(void)
 
         /* стек открытых скобок; '(' сразу после proc помечаем 'P' (список параметров) */
         if (tok == '(' || tok == '[' || tok == '{' || tok == LIT_LBRACE) {
-            if (bracket_top < 256)
-                bracket_stack[bracket_top++] = (tok == LIT_LBRACE) ? '{'
-                                             : (tok == '(' && last_token == PROC) ? 'P'
-                                             : (char)tok;
+            if (bracket_top < 256) {
+                char c = (tok == LIT_LBRACE) ? '{' : (char)tok;
+                if (tok == '(' && last_token == PROC)             c = 'P';   /* параметры proc */
+                else if (tok == '[' && !can_end_stmt(last_token)) c = 'T';   /* скобки типа [N]T */
+                bracket_stack[bracket_top++] = c;
+            }
         } else if (tok == ')' || tok == ']' || tok == '}') {
             if (bracket_top > 0) bracket_top--;
         }
