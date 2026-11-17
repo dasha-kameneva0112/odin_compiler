@@ -175,7 +175,6 @@ type_expr: ID
 // Составные типы  
 type_core: base_type                                
          | array_type                       
-         | PROC '(' param_list_opt ')' return_type    // ?
          | STRUCT '{' field_list_opt '}'
          | ENUM '{' enum_body_opt '}'          
          ;

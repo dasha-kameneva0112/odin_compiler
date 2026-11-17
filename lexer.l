@@ -16,11 +16,11 @@
 char *strip_us(const char *src, char *dest);
 void append_utf8(char *dest, unsigned int codepoint);
 unsigned int first_codepoint(const unsigned char *s);
-static int comment_seen = 0;   /* между токенами встретился комментарий */
-static int comment_depth = 0;
+static int comment_seen = 0;   // показывает, встречался ли комментарий между токенами
+static int comment_depth = 0;  // хранит глубину вложенных многострочных комментариев
 
-// позиция токена
-static int cur_line = 1, cur_col = 1;
+static int cur_line = 1, cur_col = 1;   // текущий номер строки и столбца
+// для отслеживания позиции
 #define YY_USER_ACTION                                              \
     yylloc.first_line = cur_line; yylloc.first_column = cur_col;    \
     for (int i_ = 0; i_ < yyleng; i_++) {                           \
@@ -56,9 +56,9 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 %%
 
 %{
-    char string[20480];
-    char charbuf[32];
-    char *buf = string;
+    char string[20480];   // буфер для обычных и сырых строк
+    char charbuf[32];     // буфер для символьного литерала
+    char *buf = string;   // указатель на тот буфер, с которым сейчас работает лексер
 %}
 
 "//"[^\n]*                          { comment_seen = 1; }
