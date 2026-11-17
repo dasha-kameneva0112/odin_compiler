@@ -168,15 +168,14 @@ const_decl: id_list OP_DECL_TYPED expr_list
           ;
 
 // Тип - имя или составной  
-type_expr: ID    
-         | ID '.' ID                                        
+type_expr: ID                                           
          | type_core                              
          ;
 
 // Составные типы  
 type_core: base_type                                
          | array_type                       
-         | PROC '(' param_list_opt ')' return_type   
+         | PROC '(' param_list_opt ')' return_type    // ?
          | STRUCT '{' field_list_opt '}'
          | ENUM '{' enum_body_opt '}'          
          ;
