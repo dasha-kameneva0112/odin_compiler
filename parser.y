@@ -71,6 +71,15 @@ stmt_terminator: ';'
                | AUTO_SEMI
                ;
 
+// один или несколько разделителей подряд
+terms: stmt_terminator
+     | terms stmt_terminator
+     ;
+
+opt_terms: %empty
+         | terms
+         ;
+
 
 // Верхний уровень (программа) 
 //  package main
@@ -79,15 +88,15 @@ stmt_terminator: ';'
 program: package_clause top_list 
        ;
 
-package_clause: PACKAGE ID stmt_terminator
+package_clause: PACKAGE ID terms
               ;
 
 top_list: %empty
         | top_list top_item
         ;
 
-top_item: import_decl stmt_terminator
-        | base_decl stmt_terminator
+top_item: import_decl terms
+        | base_decl terms
         ;
 
 
@@ -200,6 +209,7 @@ init_item: expr
 field_list_opt: %empty                
               | field_list          
               | field_list ','            
+              | field_list AUTO_SEMI
               ;
 
 field_list: field_decl                   
@@ -214,6 +224,7 @@ field_decl: id_list ':' type_expr
 enum_body_opt: %empty                               
              | enum_body                       
              | enum_body ','                         
+             | enum_body AUTO_SEMI
              ;
 
 enum_body: enum_item                                  
@@ -227,20 +238,18 @@ enum_item: ID
 
 // Блоки кода 
 control_block: block
-             | AUTO_SEMI block
              ;
 
 block: '{' stmt_list_opt '}'
      ;
 
 // Список операторов
-stmt_list_opt: %empty
-             | stmt_list
-             | stmt_list stmt_terminator
+stmt_list_opt: opt_terms
+             | opt_terms stmt_list opt_terms
              ;
 
 stmt_list: stmt
-         | stmt_list stmt_terminator stmt 
+         | stmt_list terms stmt 
          ;
              
 // Один оператор 
@@ -306,9 +315,9 @@ expr_opt: %empty
 if_stmt: IF expr control_block
        | IF expr control_block ELSE control_block
        | IF expr control_block ELSE if_stmt
-       | IF simple_stmt ';' expr control_block
-       | IF simple_stmt ';' expr control_block ELSE control_block
-       | IF simple_stmt ';' expr control_block ELSE if_stmt
+       | IF simple_stmt stmt_terminator expr control_block
+       | IF simple_stmt stmt_terminator expr control_block ELSE control_block
+       | IF simple_stmt stmt_terminator expr control_block ELSE if_stmt
        ;
 
 // for { } 
@@ -332,13 +341,12 @@ for_stmt: FOR control_block
 //    switch y := f(); { }    */
 switch_stmt: SWITCH switch_body
            | SWITCH expr switch_body
-           | SWITCH simple_stmt ';' expr switch_body
-           | SWITCH simple_stmt ';' switch_body
+           | SWITCH simple_stmt stmt_terminator expr switch_body
+           | SWITCH simple_stmt stmt_terminator switch_body
            ;
 
 // Тело оператора switch 
 switch_body: '{' case_list '}'
-           | AUTO_SEMI '{' case_list '}'
            ;
 
 // Список ветвей case 
@@ -353,12 +361,11 @@ case_clause: CASE expr_list ':' case_body
 
 // switvh (x) { case 1: if (1) { fallthrough} fjskjflsj case 2: kfsj 
 case_body: stmt_list_opt
-         | fall_tail
-         | stmt_list stmt_terminator fall_tail
+         | opt_terms fall_tail
+         | opt_terms stmt_list terms fall_tail
          ;
 
-fall_tail: FALLTHROUGH
-         | FALLTHROUGH stmt_terminator
+fall_tail: FALLTHROUGH opt_terms
          ;
 
 

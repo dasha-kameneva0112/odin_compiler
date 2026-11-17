@@ -23,8 +23,13 @@ strs :: proc() {
     q := "paren ( внутри строки"
 
     // Unicode
-    l := "Привет, мир"
+    l := "Привет, мир";;;;;;;;;;;;;;;;;
 
+    T :: struct {
+    a: int,
+    b: int
+    }
+    
     // Raw-строки
     m := `raw \n string`
     n := `multi

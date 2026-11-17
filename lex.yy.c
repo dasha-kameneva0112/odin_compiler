@@ -1397,27 +1397,27 @@ YY_RULE_SETUP
 /* числовые литералы */
 case 64:
 YY_RULE_SETUP
-#line 155 "lexer.l"
+#line 156 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 156 "lexer.l"
+#line 157 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 157 "lexer.l"
+#line 158 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 12); return INT_LIT; }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 158 "lexer.l"
+#line 159 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 16); return INT_LIT; }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 159 "lexer.l"
+#line 160 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 10); return INT_LIT; }
 	YY_BREAK
 case 69:
@@ -1425,22 +1425,22 @@ case 69:
 (yy_c_buf_p) = yy_cp -= 2;
 YY_DO_BEFORE_ACTION; /* set up yytext again */
 YY_RULE_SETUP
-#line 160 "lexer.l"
+#line 161 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }   /* 0..<10: точка принадлежит диапазону */
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 161 "lexer.l"
+#line 162 "lexer.l"
 { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c, NULL, 10); return INT_LIT; }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 162 "lexer.l"
+#line 163 "lexer.l"
 { char c[128]; yylval.float_val = strtod(strip_us(yytext, c), NULL); return FLOAT_LIT; }
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 163 "lexer.l"
+#line 164 "lexer.l"
 { char c[128]; 
                                     strip_us(yytext, c); 
                                     yylval.imag_val.unit  = c[strlen(c) - 1];      /* 'i', 'j' или 'k' */
@@ -1452,278 +1452,278 @@ YY_RULE_SETUP
 /* составное присваивание */
 case 73:
 YY_RULE_SETUP
-#line 172 "lexer.l"
+#line 174 "lexer.l"
 { return OP_LOG_AND_ASSIGN; }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 173 "lexer.l"
+#line 175 "lexer.l"
 { return OP_LOG_OR_ASSIGN; }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 174 "lexer.l"
+#line 176 "lexer.l"
 { return OP_ADD_ASSIGN; }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 175 "lexer.l"
+#line 177 "lexer.l"
 { return OP_SUB_ASSIGN; }
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 176 "lexer.l"
+#line 178 "lexer.l"
 { return OP_MUL_ASSIGN; }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 177 "lexer.l"
+#line 179 "lexer.l"
 { return OP_DIV_ASSIGN; }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 178 "lexer.l"
+#line 180 "lexer.l"
 { return OP_MOD_ASSIGN; }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 179 "lexer.l"
+#line 181 "lexer.l"
 { return OP_MOD2_ASSIGN; }
 	YY_BREAK
 /* диапазоны (for i in 0..<n, case 1..=5) */
 case 81:
 YY_RULE_SETUP
-#line 182 "lexer.l"
+#line 184 "lexer.l"
 { return OP_RANGE_INCLUSIVE; }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 183 "lexer.l"
+#line 185 "lexer.l"
 { return OP_RANGE_EXCLUSIVE; }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 185 "lexer.l"
+#line 187 "lexer.l"
 { return OP_RANGE; }
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 186 "lexer.l"
+#line 188 "lexer.l"
 { return OP_ARROW; }
 	YY_BREAK
 /* логические и сравнения */
 case 85:
 YY_RULE_SETUP
-#line 189 "lexer.l"
+#line 191 "lexer.l"
 { return OP_LOG_AND; }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 190 "lexer.l"
+#line 192 "lexer.l"
 { return OP_LOG_OR; }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 191 "lexer.l"
+#line 193 "lexer.l"
 { return OP_EQ; }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 192 "lexer.l"
+#line 194 "lexer.l"
 { return OP_NE; }
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 193 "lexer.l"
+#line 195 "lexer.l"
 { return OP_LE; }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 194 "lexer.l"
+#line 196 "lexer.l"
 { return OP_GE; }
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 195 "lexer.l"
+#line 197 "lexer.l"
 { return OP_MOD2; }
 	YY_BREAK
 /* объявления */
 case 92:
 YY_RULE_SETUP
-#line 198 "lexer.l"
+#line 200 "lexer.l"
 { return OP_DECL_TYPED; }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 199 "lexer.l"
+#line 201 "lexer.l"
 { return OP_DECL_INFERRED; }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 201 "lexer.l"
+#line 203 "lexer.l"
 { return '+'; }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 202 "lexer.l"
+#line 204 "lexer.l"
 { return OP_INC; }
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 203 "lexer.l"
+#line 205 "lexer.l"
 { return '-'; }
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-#line 204 "lexer.l"
+#line 206 "lexer.l"
 { return OP_DEC; }
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 205 "lexer.l"
+#line 207 "lexer.l"
 { return '*'; }
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 206 "lexer.l"
+#line 208 "lexer.l"
 { return '/'; }
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 207 "lexer.l"
+#line 209 "lexer.l"
 { return '%'; }
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 208 "lexer.l"
+#line 210 "lexer.l"
 { return '='; }
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 209 "lexer.l"
+#line 211 "lexer.l"
 { return '!'; }
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 210 "lexer.l"
+#line 212 "lexer.l"
 { return '<'; }
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 211 "lexer.l"
+#line 213 "lexer.l"
 { return '>'; }
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 212 "lexer.l"
+#line 214 "lexer.l"
 { return '('; }
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
-#line 213 "lexer.l"
+#line 215 "lexer.l"
 { return ')'; }
 	YY_BREAK
 case 107:
 YY_RULE_SETUP
-#line 214 "lexer.l"
+#line 216 "lexer.l"
 { return '['; }
 	YY_BREAK
 case 108:
 YY_RULE_SETUP
-#line 215 "lexer.l"
+#line 217 "lexer.l"
 { return ']'; }
 	YY_BREAK
 case 109:
 YY_RULE_SETUP
-#line 216 "lexer.l"
+#line 218 "lexer.l"
 { return '{'; }
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 217 "lexer.l"
+#line 219 "lexer.l"
 { return '}'; }
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 218 "lexer.l"
+#line 220 "lexer.l"
 { return ','; }
 	YY_BREAK
 case 112:
 YY_RULE_SETUP
-#line 219 "lexer.l"
+#line 221 "lexer.l"
 { return ';'; }
 	YY_BREAK
 case 113:
 YY_RULE_SETUP
-#line 220 "lexer.l"
+#line 222 "lexer.l"
 { return '.'; }
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 221 "lexer.l"
+#line 223 "lexer.l"
 { return ':'; } 
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 223 "lexer.l"
+#line 225 "lexer.l"
 { return BOOL; }
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 224 "lexer.l"
+#line 226 "lexer.l"
 { return INT; }
 	YY_BREAK
 case 117:
 YY_RULE_SETUP
-#line 225 "lexer.l"
+#line 227 "lexer.l"
 { return F32; }
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 226 "lexer.l"
+#line 228 "lexer.l"
 { return F64; }
 	YY_BREAK
 case 119:
 YY_RULE_SETUP
-#line 227 "lexer.l"
+#line 229 "lexer.l"
 { return STRING; }
 	YY_BREAK
 case 120:
 YY_RULE_SETUP
-#line 228 "lexer.l"
+#line 230 "lexer.l"
 { return RUNE; }
 	YY_BREAK
 /* идентификаторы и пробелы */
 case 121:
 YY_RULE_SETUP
-#line 231 "lexer.l"
+#line 233 "lexer.l"
 { yylval.str_val = strdup(yytext); return ID; }
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 232 "lexer.l"
+#line 234 "lexer.l"
 { /* пропускаем пробелы */ }
 	YY_BREAK
 case 123:
 /* rule 123 can match eol */
 YY_RULE_SETUP
-#line 233 "lexer.l"
+#line 235 "lexer.l"
 { return '\n'; }
 	YY_BREAK
 case 124:
 /* rule 124 can match eol */
 YY_RULE_SETUP
-#line 234 "lexer.l"
+#line 236 "lexer.l"
 { /* \ поглощает перевод строки */ }
 	YY_BREAK
 case 125:
 YY_RULE_SETUP
-#line 235 "lexer.l"
+#line 237 "lexer.l"
 { fprintf(stderr, "Lex error: unknown symbol '%s' at %d:%d\n", yytext, yylloc.first_line, yylloc.first_column); return LEX_ERROR; }
 	YY_BREAK
 case 126:
 YY_RULE_SETUP
-#line 237 "lexer.l"
+#line 239 "lexer.l"
 ECHO;
 	YY_BREAK
 #line 1729 "lex.yy.c"
@@ -2732,7 +2732,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 237 "lexer.l"
+#line 239 "lexer.l"
 
 
 char *strip_us(const char *src, char *dest) {
@@ -2795,15 +2795,17 @@ static int block_kind  = BLK_NONE;
 static int block_depth = 0;                 /* уровень скобок, на котором ждём '{' */
 
 /* один токен обратной подстановки (подглядывание вперёд) */
-static int      has_back = 0, back_tok = 0;
-static YYSTYPE  back_val;
-static YYLTYPE  back_loc;
+static int has_back = 0, back_tok = 0;
+static YYSTYPE back_val;
+static YYLTYPE back_loc;
 
 static int raw_next(void)
 {
     if (has_back) {
         has_back = 0;
-        yylval = back_val; yylloc = back_loc;
+        yylval = back_val; 
+        yylloc = back_loc;
+
         return back_tok;
     }
     return odin_lex();
@@ -2811,7 +2813,10 @@ static int raw_next(void)
 
 static void unget(int tok)
 {
-    back_tok = tok; back_val = yylval; back_loc = yylloc; has_back = 1;
+    back_tok = tok; 
+    back_val = yylval; 
+    back_loc = yylloc; 
+    has_back = 1;
 }
 
 /* После каких токенов Odin вставляет ; */
@@ -2877,23 +2882,29 @@ int yylex(void)
 
             YYLTYPE nl = yylloc;                          /* позиция перевода строки */
             int after_rbrace = (last_token == '}');
-            int after_sig    = (block_kind == BLK_PROC);
+            int after_sig = (block_kind == BLK_PROC);
+            int after_hdr = (block_kind == BLK_HEADER && bracket_top == block_depth);
 
-            if (after_rbrace || after_sig) {
+            if (after_rbrace || after_sig || after_hdr) {
                 comment_seen = 0;
                 int nt;
-                do { nt = raw_next(); } while (nt == '\n');
+                do { 
+                    nt = raw_next(); 
+                } while (nt == '\n');
                 unget(nt);
 
                 /* '}' <перевод строки> else   или   proc() <перевод строки> '{' (строго следующая строка) */
                 if ((after_rbrace && nt == ELSE && !comment_seen) ||
-                    (after_sig && nt == '{' && back_loc.first_line == nl.last_line))
+                    (after_sig && nt == '{' && back_loc.first_line == nl.last_line) ||
+                    (after_hdr && nt == '{'))             /* if/for/switch cond <перевод строки> '{' */
                     continue;                             /* здесь перевод строки не заканчивает оператор */
             }
 
             yylloc = nl;
             last_token = AUTO_SEMI;
-            block_kind = BLK_NONE;
+            if (!after_hdr) {
+                block_kind = BLK_NONE;      /* терминатор внутри заголовка if/switch: '{' тела ещё впереди */
+            }
             return AUTO_SEMI;
         }
 
@@ -2915,10 +2926,14 @@ int yylex(void)
 
         /* ждём '{' тела блока */
         if ((tok == IF && stmt_start(last_token)) || tok == FOR || tok == SWITCH) {
-            block_kind = BLK_HEADER; block_depth = bracket_top;
-        } else if (tok == PROC) {
-            block_kind = BLK_PROC;   block_depth = bracket_top;
-        } else if (tok == DO || (tok == ';' && block_kind == BLK_PROC)) {
+            block_kind = BLK_HEADER; 
+            block_depth = bracket_top;
+        } 
+        else if (tok == PROC) {
+            block_kind = BLK_PROC;   
+            block_depth = bracket_top;
+        } 
+        else if (tok == DO || (tok == ';' && block_kind == BLK_PROC)) {
             block_kind = BLK_NONE;
         }
 
@@ -2933,12 +2948,17 @@ int yylex(void)
         if (tok == '(' || tok == '[' || tok == '{' || tok == LIT_LBRACE) {
             if (bracket_top < 256) {
                 char c = (tok == LIT_LBRACE) ? '{' : (char)tok;
-                if (tok == '(' && last_token == PROC)             c = 'P';   /* параметры proc */
-                else if (tok == '[' && !can_end_stmt(last_token)) c = 'T';   /* скобки типа [N]T */
+                if (tok == '(' && last_token == PROC) {
+                    c = 'P';   /* параметры proc */
+                }
+                else if (tok == '[' && !can_end_stmt(last_token)) {
+                     c = 'T';   /* скобки типа [N]T */
+                }
                 bracket_stack[bracket_top++] = c;
             }
         } else if (tok == ')' || tok == ']' || tok == '}') {
-            if (bracket_top > 0) bracket_top--;
+            if (bracket_top > 0) 
+                bracket_top--;
         }
 
         last_token = tok;

@@ -150,6 +150,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
 "or_else"                 { return OR_ELSE; }
 "or_return"               { return OR_RETURN; }
 
+    
     /* числовые литералы */
 0b{BIN_DIGIT}(_?{BIN_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 2);  return INT_LIT; }
 0o{OCT_DIGIT}(_?{OCT_DIGIT})*    { char c[128]; strip_us(yytext, c); yylval.int_val = strtoll(c+2, NULL, 8);  return INT_LIT; }
@@ -166,6 +167,7 @@ ESC_UNICODE32 \\U{HEX_DIGIT}{8}
                                     yylval.imag_val.value = strtod(c, NULL);
                                     return IMAGINARY_LIT; }
 
+    
     /* ---- операторы ---- */
     /* составное присваивание */
 "&&="       { return OP_LOG_AND_ASSIGN; }
@@ -295,15 +297,17 @@ static int block_kind  = BLK_NONE;
 static int block_depth = 0;                 /* уровень скобок, на котором ждём '{' */
 
 /* один токен обратной подстановки (подглядывание вперёд) */
-static int      has_back = 0, back_tok = 0;
-static YYSTYPE  back_val;
-static YYLTYPE  back_loc;
+static int has_back = 0, back_tok = 0;
+static YYSTYPE back_val;
+static YYLTYPE back_loc;
 
 static int raw_next(void)
 {
     if (has_back) {
         has_back = 0;
-        yylval = back_val; yylloc = back_loc;
+        yylval = back_val; 
+        yylloc = back_loc;
+
         return back_tok;
     }
     return odin_lex();
@@ -311,7 +315,10 @@ static int raw_next(void)
 
 static void unget(int tok)
 {
-    back_tok = tok; back_val = yylval; back_loc = yylloc; has_back = 1;
+    back_tok = tok; 
+    back_val = yylval; 
+    back_loc = yylloc; 
+    has_back = 1;
 }
 
 /* После каких токенов Odin вставляет ; */
@@ -377,23 +384,29 @@ int yylex(void)
 
             YYLTYPE nl = yylloc;                          /* позиция перевода строки */
             int after_rbrace = (last_token == '}');
-            int after_sig    = (block_kind == BLK_PROC);
+            int after_sig = (block_kind == BLK_PROC);
+            int after_hdr = (block_kind == BLK_HEADER && bracket_top == block_depth);
 
-            if (after_rbrace || after_sig) {
+            if (after_rbrace || after_sig || after_hdr) {
                 comment_seen = 0;
                 int nt;
-                do { nt = raw_next(); } while (nt == '\n');
+                do { 
+                    nt = raw_next(); 
+                } while (nt == '\n');
                 unget(nt);
 
                 /* '}' <перевод строки> else   или   proc() <перевод строки> '{' (строго следующая строка) */
                 if ((after_rbrace && nt == ELSE && !comment_seen) ||
-                    (after_sig && nt == '{' && back_loc.first_line == nl.last_line))
+                    (after_sig && nt == '{' && back_loc.first_line == nl.last_line) ||
+                    (after_hdr && nt == '{'))             /* if/for/switch cond <перевод строки> '{' */
                     continue;                             /* здесь перевод строки не заканчивает оператор */
             }
 
             yylloc = nl;
             last_token = AUTO_SEMI;
-            block_kind = BLK_NONE;
+            if (!after_hdr) {
+                block_kind = BLK_NONE;      /* терминатор внутри заголовка if/switch: '{' тела ещё впереди */
+            }
             return AUTO_SEMI;
         }
 
@@ -415,10 +428,14 @@ int yylex(void)
 
         /* ждём '{' тела блока */
         if ((tok == IF && stmt_start(last_token)) || tok == FOR || tok == SWITCH) {
-            block_kind = BLK_HEADER; block_depth = bracket_top;
-        } else if (tok == PROC) {
-            block_kind = BLK_PROC;   block_depth = bracket_top;
-        } else if (tok == DO || (tok == ';' && block_kind == BLK_PROC)) {
+            block_kind = BLK_HEADER; 
+            block_depth = bracket_top;
+        } 
+        else if (tok == PROC) {
+            block_kind = BLK_PROC;   
+            block_depth = bracket_top;
+        } 
+        else if (tok == DO || (tok == ';' && block_kind == BLK_PROC)) {
             block_kind = BLK_NONE;
         }
 
@@ -433,12 +450,17 @@ int yylex(void)
         if (tok == '(' || tok == '[' || tok == '{' || tok == LIT_LBRACE) {
             if (bracket_top < 256) {
                 char c = (tok == LIT_LBRACE) ? '{' : (char)tok;
-                if (tok == '(' && last_token == PROC)             c = 'P';   /* параметры proc */
-                else if (tok == '[' && !can_end_stmt(last_token)) c = 'T';   /* скобки типа [N]T */
+                if (tok == '(' && last_token == PROC) {
+                    c = 'P';   /* параметры proc */
+                }
+                else if (tok == '[' && !can_end_stmt(last_token)) {
+                     c = 'T';   /* скобки типа [N]T */
+                }
                 bracket_stack[bracket_top++] = c;
             }
         } else if (tok == ')' || tok == ']' || tok == '}') {
-            if (bracket_top > 0) bracket_top--;
+            if (bracket_top > 0) 
+                bracket_top--;
         }
 
         last_token = tok;

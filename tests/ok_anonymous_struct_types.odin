@@ -6,5 +6,5 @@ main :: proc() {
 }
 
 f :: proc(p: struct { x: int }) -> struct { y: int } {
-    return {1}
+    return 1
 }
