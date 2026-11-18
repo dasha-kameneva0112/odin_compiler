@@ -382,10 +382,10 @@ int yylex(void)
             if (in_brackets() || !can_end_stmt(last_token))
                 continue;
 
-            YYLTYPE nl = yylloc;                          /* позиция перевода строки */
-            int after_rbrace = (last_token == '}');
-            int after_sig = (block_kind == BLK_PROC);
-            int after_hdr = (block_kind == BLK_HEADER && bracket_top == block_depth);
+            YYLTYPE nl = yylloc;  /* позиция перевода строки */
+            int after_rbrace = (last_token == '}');    // перед переводом строки была закрывающая фигурная скобка или нет
+            int after_sig = (block_kind == BLK_PROC);  // ожидается тело функции после её сигнатуры
+            int after_hdr = (block_kind == BLK_HEADER && bracket_top == block_depth);  // ожидается тело конструкции if, for или switch
 
             if (after_rbrace || after_sig || after_hdr) {
                 comment_seen = 0;
