@@ -144,8 +144,9 @@ return_type: %empty
            | OP_ARROW '(' return_type_list ')'     
            ;
 
-return_type_list: type_expr                         
-                | return_type_list ',' type_expr  
+return_type_list: type_expr
+                | return_type_list ',' type_expr
+                | return_type_list ','
                 ;
 
 // Переменные 

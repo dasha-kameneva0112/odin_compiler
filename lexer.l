@@ -286,20 +286,20 @@ void append_utf8(char *dest, unsigned int codepoint) {
 
 int odin_lex(void);
 
-static int  last_token = 0;
-static char bracket_stack[256];
-static int  bracket_top = 0;
+static int  last_token = 0;     // какой токен вернули в прошлый раз
+static char bracket_stack[256]; // стек открытых скобок: '(', '[', '{', 'P' (параметры proc), 'T' (тип)
+static int  bracket_top = 0;    // 
 
 /* Ждём '{' тела: заголовок if/for/switch или сигнатура proc (-> T {).
    Такая '{' это блок, а не составной литерал Pair{...}. */
 enum { BLK_NONE, BLK_HEADER, BLK_PROC };
 static int block_kind  = BLK_NONE;
-static int block_depth = 0;                 /* уровень скобок, на котором ждём '{' */
+static int block_depth = 0;   // уровень скобок, на котором ждём '{' 
 
 /* один токен обратной подстановки (подглядывание вперёд) */
-static int has_back = 0, back_tok = 0;
-static YYSTYPE back_val;
-static YYLTYPE back_loc;
+static int has_back = 0, back_tok = 0; // флаг есть ли что-то в кармане? и номер отложенного токена 
+static YYSTYPE back_val;    // значение отложенного токена
+static YYLTYPE back_loc;    // позиция отложенного токена
 
 static int raw_next(void)
 {
@@ -368,7 +368,7 @@ static int in_brackets(void)
 
 int yylex(void)
 {
-    static int at_eof = 0;
+    static int at_eof = 0; // означает, что лексер уже достиг конца файла
     if (at_eof) return 0;
 
     for (;;) {
